@@ -1,0 +1,45 @@
+{
+    "name": "floating-window",
+    "private": true,
+    "version": "1.0.59",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "patch": "./patch.sh"
+    },
+    "dependencies": {
+        "@dataloop-ai/icons": "^2.0.9",
+        "@dataloop-ai/components": "^0.17.101",
+        "@dataloop-ai/jssdk": "^0.0.107",
+        "vue": "^3.4.21",
+        "vue-demi": "^0.13.11",
+        "pdfjs-dist": "~3.6.172"
+    },
+    "devDependencies": {
+        "@iconify/json": "^2.2.62",
+        "@iconify/vue": "^4.1.1",
+        "@typescript-eslint/eslint-plugin": "^5.59.7",
+        "@typescript-eslint/parser": "^5.59.7",
+        "@vitejs/plugin-basic-ssl": "^0.1.2",
+        "@vitejs/plugin-vue": "^3.0.3",
+        "@vue/eslint-config-prettier": "^7.1.0",
+        "@vue/eslint-config-typescript": "^11.0.3",
+        "autoprefixer": "^10.4.14",
+        "eslint": "^8.41.0",
+        "eslint-config-prettier": "^8.8.0",
+        "eslint-plugin-member-order": "^0.0.3",
+        "eslint-plugin-prettier": "^4.2.1",
+        "eslint-plugin-vue": "^9.14.1",
+        "postcss": "^8.4.23",
+        "postcss-html": "^1.5.0",
+        "sass": "^1.57.1",
+        "stylus": "^0.59.0",
+        "tailwindcss": "^3.3.2",
+        "typescript": "^5.0.4",
+        "unplugin-icons": "^0.16.1",
+        "unplugin-vue-components": "^0.24.1",
+        "vite": "^3.0.7"
+    }
+}
