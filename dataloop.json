@@ -43,7 +43,7 @@
             {
                 "name": "dataloop-preview-runner",
                 "displayName": "Preview Runner",
-                "panelNames": ["`preview`"],
+                "panelNames": ["preview"],
                 "initParams": {},
                 "runtime": {
                     "podType": "regular-xs",
