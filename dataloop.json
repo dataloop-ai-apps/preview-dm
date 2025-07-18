@@ -1,12 +1,12 @@
 {
-    "version": "0.0.5",
+    "version": "0.0.6",
     "name": "preview-dm",
     "displayName": "Preview DM",
     "description": "Preview for Dataloop Data Management",
     "codebase": {
         "type": "git",
         "gitUrl": "https://github.com/dataloop-ai-apps/preview-dm.git",
-        "gitTag": "0.0.5"
+        "gitTag": "0.0.6"
     },
     "scope": "public",
     "components": {
