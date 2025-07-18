@@ -29,6 +29,7 @@
         "toolbars": [
             {
                 "displayName": "Preview",
+                "name": "preview-toolbar",
                 "icon": "",
                 "invoke": {
                     "type": "panel",
