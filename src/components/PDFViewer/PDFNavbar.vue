@@ -134,7 +134,7 @@
                     </button>
                 </div>
                 <div class="flex flex-row gap-1">
-                    <div class="relative w-full">
+                    <div class="relative w-full text-gray-600">
                         <input
                             id="search"
                             ref="searchInput"
