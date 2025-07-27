@@ -51,9 +51,8 @@ const isDark = computed(() => currentTheme.value === ThemeType.DARK)
 
 onMounted(async () => {
     console.log('onMounted')
-    await dl.init()
     dl.on(DlEvent.READY, async () => {
-        const settings = await window.dl.settings.get()
+        const settings = await dl.settings.get()
         currentTheme.value = settings.theme
         dl.on(DlEvent.THEME, (data) => {
             currentTheme.value = data
@@ -81,6 +80,20 @@ const setItem = async (itemId) => {
         timeout: 10000
     })
     const mimetype = item.metadata.system.mimetype
+    const filename = item.name || ''
+
+    // Check if it's a USDZ file (they often appear as application/zip)
+    let actualMimetype = mimetype
+    let actualTypeOfContent = mimetype
+
+    if (
+        mimetype === 'application/zip' &&
+        filename.toLowerCase().endsWith('.usdz')
+    ) {
+        actualMimetype = 'application/usdz'
+        actualTypeOfContent = 'usdz'
+    }
+
     // Supported mimetypes based on FloatingWindow.vue
     const supported = [
         'video', // any video/*
@@ -89,10 +102,14 @@ const setItem = async (itemId) => {
         'audio', // any audio/*
         'json', // application/json
         'plain', // text/plain
-        'txt' // text/txt or similar
+        'txt', // text/txt or similar
+        'usdz' // USDZ 3D files
     ]
+
     // Check if mimetype is supported
-    const isSupported = supported.some((type) => mimetype.includes(type))
+    const isSupported = supported.some((type) =>
+        actualTypeOfContent.includes(type)
+    )
     if (!isSupported) {
         message.value = `This mimetype is not supported: ${mimetype}`
         loading.value = false
@@ -104,8 +121,8 @@ const setItem = async (itemId) => {
     url.value = await dl.items.stream(item.stream, {
         timeout: 10000
     })
-    type.value = mimetype
-    typeOfContent.value = mimetype
+    type.value = actualMimetype
+    typeOfContent.value = actualTypeOfContent
     // if mimetype is not supported, show a message
 }
 </script>

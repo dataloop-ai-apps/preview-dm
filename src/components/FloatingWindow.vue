@@ -53,6 +53,11 @@
             :url="url"
             :loading="loading"
         />
+        <USDZComponent
+            v-else-if="typeOfContent.includes('usdz')"
+            :url="url"
+            :loading="loading"
+        />
     </div>
 </template>
 
@@ -64,6 +69,7 @@ import PDFComponent from './PDFComponent.vue'
 import AudioComponent from './AudioComponent.vue'
 import JSONViewer from './JSONViewer.vue'
 import TXTViewer from './TXTViewer.vue'
+import USDZComponent from './USDZComponent.vue'
 
 const props = defineProps<{
     setIsOpen: (value: boolean) => void

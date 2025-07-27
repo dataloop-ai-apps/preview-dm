@@ -1,6 +1,13 @@
-import { createApp } from 'vue'
-import '@dataloop-ai/icons/docs/style.css'
 import './style.css'
+import { createApp } from 'vue'
 import App from './App.vue'
+import { initializeFrameDriver, xFrameDriver } from '@dataloop-ai/jssdk'
 
-createApp(App).mount('#app')
+initializeFrameDriver().then(() => {
+    createApp(App).mount('#app')
+})
+declare global {
+    interface Window {
+        dl: xFrameDriver
+    }
+}

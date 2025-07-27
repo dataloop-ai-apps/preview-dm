@@ -7,15 +7,18 @@
         "dev": "vite",
         "build": "vite build",
         "preview": "vite preview",
-        "patch": "./patch.sh"
+        "patch": "./patch.sh",
+        "copydeps": "cp node_modules/three-usdz-loader/external/* public/"
     },
     "dependencies": {
-        "@dataloop-ai/icons": "^2.0.9",
         "@dataloop-ai/components": "^0.17.101",
+        "@dataloop-ai/icons": "^2.0.9",
         "@dataloop-ai/jssdk": "^0.0.107",
+        "pdfjs-dist": "~3.6.172",
+        "three": "^0.166.1",
+        "three-usdz-loader": "^1.0.9",
         "vue": "^3.4.21",
-        "vue-demi": "^0.13.11",
-        "pdfjs-dist": "~3.6.172"
+        "vue-demi": "^0.13.11"
     },
     "devDependencies": {
         "@iconify/json": "^2.2.62",

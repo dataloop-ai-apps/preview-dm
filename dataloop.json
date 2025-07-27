@@ -8,7 +8,7 @@
         "gitUrl": "https://github.com/dataloop-ai-apps/preview-dm.git",
         "gitTag": "0.0.6"
     },
-    "scope": "public",
+    "scope": "project",
     "components": {
         "panels": [
             {
