@@ -108,15 +108,15 @@ const loadModel = async () => {
         loading.value = true
         error.value = ''
 
-        console.log('Starting USDZ file download...')
-
-        // Fetch the USDZ file from the URL
-        const response = await fetch(props.url)
-        if (!response.ok) {
-            throw new Error(`Failed to fetch USDZ file: ${response.statusText}`)
+        console.log('Parsing data URI...')
+        const base64String = props.url.split(',')[1]
+        const byteString = atob(base64String)
+        const byteArray = new Uint8Array(byteString.length)
+        for (let i = 0; i < byteString.length; i++) {
+            byteArray[i] = byteString.charCodeAt(i)
         }
+        const arrayBuffer = byteArray.buffer
 
-        const arrayBuffer = await response.arrayBuffer()
         const blob = new Blob([arrayBuffer], {
             type: 'application/octet-stream'
         })
@@ -124,7 +124,7 @@ const loadModel = async () => {
             type: 'application/octet-stream'
         })
 
-        console.log('USDZ file downloaded, initializing loader...')
+        console.log('USDZ file ready, initializing loader...')
 
         // Initialize the USDZ loader with correct dependencies path
         // WebAssembly files are served from the public directory
@@ -167,7 +167,7 @@ const loadModel = async () => {
 
         // Enable shadows for all meshes in the model
         targetGroup.traverse((child) => {
-            if (child.isMesh) {
+            if ((child as THREE.Mesh).isMesh) {
                 child.castShadow = true
                 child.receiveShadow = true
             }
