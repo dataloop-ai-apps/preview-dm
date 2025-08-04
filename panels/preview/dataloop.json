@@ -1,0 +1,31 @@
+{
+    "components": {
+        "panels": [
+            {
+                "name": "referenceLocal",
+                "supportedSlots": [
+                    {
+                        "type": "datasetBrowser",
+                        "configuration": {
+                            "layout": {
+                                "rightBarView": "thumbnails"
+                            }
+                        }
+                    }
+                ],
+                "conditions": {}
+            }
+        ],
+        "toolbars": [
+            {
+                "displayName": "Local Preview",
+                "icon": "",
+                "invoke": {
+                    "type": "panel",
+                    "namespace": "referenceLocal"
+                },
+                "location": "datasetBrowserTab"
+            }
+        ]
+    }
+}

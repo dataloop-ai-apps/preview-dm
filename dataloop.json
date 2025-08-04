@@ -1,0 +1,67 @@
+{
+    "version": "0.0.6",
+    "name": "preview-dm",
+    "displayName": "Preview DM",
+    "description": "Preview for Dataloop Data Management",
+    "codebase": {
+        "type": "git",
+        "gitUrl": "https://github.com/dataloop-ai-apps/preview-dm.git",
+        "gitTag": "0.0.6"
+    },
+    "scope": "public",
+    "components": {
+        "panels": [
+            {
+                "name": "preview",
+                "supportedSlots": [
+                    {
+                        "type": "datasetBrowser",
+                        "configuration": {
+                            "layout": {
+                                "rightBarView": "thumbnails"
+                            }
+                        }
+                    }
+                ],
+                "conditions": {}
+            }
+        ],
+        "toolbars": [
+            {
+                "displayName": "Preview",
+                "name": "preview-toolbar",
+                "icon": "",
+                "invoke": {
+                    "type": "panel",
+                    "namespace": "preview"
+                },
+                "location": "datasetBrowserTab"
+            }
+        ],
+        "modules": [],
+        "services": [
+            {
+                "name": "dataloop-preview-runner",
+                "displayName": "Preview Runner",
+                "panelNames": ["preview"],
+                "initParams": {},
+                "runtime": {
+                    "podType": "regular-xs",
+                    "numReplicas": 1,
+                    "concurrency": 10,
+                    "runnerImage": "docker.io/dataloopai/dtlpy-agent:cpu.py3.10.opencv",
+                    "singleAgent": false,
+                    "autoscaler": {
+                        "type": "rabbitmq",
+                        "minReplicas": 1,
+                        "maxReplicas": 1,
+                        "queueLength": 1
+                    },
+                    "preemptible": false,
+                    "executionTimeout": 3600
+                }
+            }
+        ]
+    },
+    "trusted": true
+}
