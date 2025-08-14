@@ -53,17 +53,23 @@
             :url="url"
             :loading="loading"
         />
+        <DICOMViewer
+            v-else-if="typeOfContent.includes('dicom')"
+            :url="url"
+            :loading="loading"
+            :is-black-theme="isBlackTheme"
+        />
+        <PCDViewer
+            v-else-if="typeOfContent.includes('pcd')"
+            :url="url"
+            :loading="loading"
+            :is-black-theme="isBlackTheme"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import VideoComponent from './VideoComponent.vue'
-import ImageComponent from './ImageComponent.vue'
-import PDFComponent from './PDFComponent.vue'
-import AudioComponent from './AudioComponent.vue'
-import JSONViewer from './JSONViewer.vue'
-import TXTViewer from './TXTViewer.vue'
 
 const props = defineProps<{
     setIsOpen: (value: boolean) => void

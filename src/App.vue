@@ -13,6 +13,7 @@
                     v-if="!message"
                     :loading="loading"
                     :type-of-content="typeOfContent"
+                    :is-black-theme="isDark"
                     :set-is-open="(value) => (isOpen = value)"
                     :width="initialWidth"
                     :height="initialHeight"
@@ -87,7 +88,9 @@ const setItem = async (itemId) => {
         'audio', // any audio/*
         'json', // application/json
         'plain', // text/plain
-        'txt' // text/txt or similar
+        'txt', // text/txt or similar
+        'dicom', // application/dicom, image/dicom, or similar
+        'pcd' // point cloud
     ]
     // Check if mimetype is supported
     const isSupported = supported.some((type) => mimetype.includes(type))
@@ -103,8 +106,22 @@ const setItem = async (itemId) => {
         timeout: 10000
     })
     type.value = mimetype
-    typeOfContent.value = mimetype
-    // if mimetype is not supported, show a message
+    // Normalize DICOM/PCD detection
+    if (
+        mimetype.includes('dicom') ||
+        mimetype === 'application/dicom' ||
+        mimetype === 'application/dicom+json'
+    ) {
+        typeOfContent.value = 'dicom'
+    } else if (
+        (item?.name && item.name.toLowerCase().endsWith('.pcd')) ||
+        mimetype.includes('pcd') ||
+        mimetype === 'application/pcd'
+    ) {
+        typeOfContent.value = 'pcd'
+    } else {
+        typeOfContent.value = mimetype
+    }
 }
 </script>
 
