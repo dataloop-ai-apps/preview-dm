@@ -10,12 +10,17 @@
         "patch": "./patch.sh"
     },
     "dependencies": {
-        "@dataloop-ai/icons": "^2.0.9",
         "@dataloop-ai/components": "^0.17.101",
+        "@dataloop-ai/icons": "^2.0.9",
         "@dataloop-ai/jssdk": "^0.0.107",
+        "cornerstone-core": "^2.3.0",
+        "cornerstone-math": "^0.1.10",
+        "cornerstone-wado-image-loader": "^4.13.2",
+        "dicom-parser": "^1.8.21",
+        "pdfjs-dist": "~3.6.172",
+        "three": "^0.164.1",
         "vue": "^3.4.21",
-        "vue-demi": "^0.13.11",
-        "pdfjs-dist": "~3.6.172"
+        "vue-demi": "^0.13.11"
     },
     "devDependencies": {
         "@iconify/json": "^2.2.62",

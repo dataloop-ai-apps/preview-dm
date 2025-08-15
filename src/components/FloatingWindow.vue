@@ -53,17 +53,30 @@
             :url="url"
             :loading="loading"
         />
+        <DICOMViewer
+            v-else-if="typeOfContent.includes('dicom')"
+            :url="url"
+            :loading="loading"
+            :is-black-theme="isBlackTheme"
+        />
+        <PCDViewer
+            v-else-if="typeOfContent.includes('pcd')"
+            :url="url"
+            :loading="loading"
+            :is-black-theme="isBlackTheme"
+        />
+        <MeshViewer
+            v-else-if="typeOfContent.includes('mesh')"
+            :url="url"
+            :loading="loading"
+            :is-black-theme="isBlackTheme"
+            :name="name"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import VideoComponent from './VideoComponent.vue'
-import ImageComponent from './ImageComponent.vue'
-import PDFComponent from './PDFComponent.vue'
-import AudioComponent from './AudioComponent.vue'
-import JSONViewer from './JSONViewer.vue'
-import TXTViewer from './TXTViewer.vue'
 
 const props = defineProps<{
     setIsOpen: (value: boolean) => void
@@ -76,6 +89,7 @@ const props = defineProps<{
     typeOfContent: string
     width?: number
     height?: number
+    name?: string
 }>()
 
 const imgWidth = ref<number | null>(null)

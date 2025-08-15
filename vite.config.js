@@ -22,7 +22,20 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['lodash', 'pdfjs-dist', 'highlight.js','flat'],
+    include: [
+      'lodash',
+      'pdfjs-dist',
+      'highlight.js',
+      'flat',
+      'three',
+      'three/examples/jsm/controls/OrbitControls',
+      'three/examples/jsm/loaders/GLTFLoader',
+      'three/examples/jsm/loaders/OBJLoader',
+      'three/examples/jsm/loaders/STLLoader',
+      'three/examples/jsm/loaders/PLYLoader',
+      'three/examples/jsm/loaders/FBXLoader',
+      'three/examples/jsm/loaders/TDSLoader'
+    ],
     exclude: ['node_modules', './node_modules', 'dist', './dist']
   },
   plugins: [
