@@ -65,6 +65,13 @@
             :loading="loading"
             :is-black-theme="isBlackTheme"
         />
+        <MeshViewer
+            v-else-if="typeOfContent.includes('mesh')"
+            :url="url"
+            :loading="loading"
+            :is-black-theme="isBlackTheme"
+            :name="name"
+        />
     </div>
 </template>
 
@@ -82,6 +89,7 @@ const props = defineProps<{
     typeOfContent: string
     width?: number
     height?: number
+    name?: string
 }>()
 
 const imgWidth = ref<number | null>(null)

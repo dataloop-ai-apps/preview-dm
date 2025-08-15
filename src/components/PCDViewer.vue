@@ -23,7 +23,6 @@ let scene: THREE.Scene | null = null
 let camera: THREE.PerspectiveCamera | null = null
 let controls: OrbitControls | null = null
 let frameId: number | null = null
-let gridHelper: THREE.GridHelper | null = null
 let pointCloud: THREE.Points | null = null
 let lastCenter: THREE.Vector3 | null = null
 let lastMaxSize: number | null = null
@@ -31,7 +30,6 @@ let lastMaxSize: number | null = null
 const dispose = () => {
     if (frameId) cancelAnimationFrame(frameId)
     if (controls) controls.dispose()
-    if (gridHelper && scene) scene.remove(gridHelper)
     if (pointCloud && scene) scene.remove(pointCloud)
     if (renderer) {
         renderer.dispose()
@@ -44,7 +42,6 @@ const dispose = () => {
     scene = null
     camera = null
 
-    gridHelper = null
     pointCloud = null
     lastCenter = null
     lastMaxSize = null
@@ -83,12 +80,24 @@ const animate = () => {
 }
 
 const getCssVarColor = (varName: string) => {
-    const value = getComputedStyle(document.documentElement)
+    let value = getComputedStyle(document.documentElement)
         .getPropertyValue(varName)
         .trim()
+
+    // Normalize CSS color for three.js (no alpha in hex)
+    if (value.startsWith('#')) {
+        if (value.length === 9) value = value.slice(0, 7) // #RRGGBBAA -> #RRGGBB
+        if (value.length === 5) value = `#${value[1]}${value[2]}${value[3]}` // #RGBA -> #RGB
+    } else if (value.startsWith('rgba')) {
+        const parts = value
+            .replace(/^rgba\(|\)$/g, '')
+            .split(',')
+            .map((p) => p.trim())
+        value = `rgb(${parts[0]}, ${parts[1]}, ${parts[2]})`
+    }
+
     const color = new THREE.Color()
     try {
-        // supports hex, rgb(a), hsl(a)
         color.set(value || '#444')
     } catch (e) {
         color.set('#444')
@@ -137,7 +146,7 @@ const init = () => {
             pointCloud = points
             scene!.add(points)
 
-            // Helpers sized and positioned relative to the point cloud
+            // Compute framing metrics relative to the point cloud
             const box = new THREE.Box3().setFromObject(points)
             const size = new THREE.Vector3()
             const center = new THREE.Vector3()
@@ -146,22 +155,6 @@ const init = () => {
             const maxSize = Math.max(size.x || 1, size.y || 1, size.z || 1)
             lastCenter = center.clone()
             lastMaxSize = maxSize
-
-            // axes removed per request; keep only grid
-
-            const gridColor = getCssVarColor('--dl-color-darker')
-            gridHelper = new THREE.GridHelper(
-                maxSize * 2,
-                10,
-                gridColor,
-                gridColor
-            )
-            gridHelper.position.set(
-                center.x,
-                center.y - maxSize * 0.5,
-                center.z
-            )
-            scene!.add(gridHelper)
 
             fitCameraToObject(points, 1)
             animate()
@@ -201,23 +194,7 @@ const applyTheme = () => {
         }
     }
 
-    // Recreate grid with theme color
-    if (scene && lastCenter && lastMaxSize) {
-        if (gridHelper) scene.remove(gridHelper)
-        const gridColor = getCssVarColor('--dl-color-darker')
-        gridHelper = new THREE.GridHelper(
-            lastMaxSize * 2,
-            10,
-            gridColor,
-            gridColor
-        )
-        gridHelper.position.set(
-            lastCenter.x,
-            lastCenter.y - lastMaxSize * 0.5,
-            lastCenter.z
-        )
-        scene.add(gridHelper)
-    }
+    // No grid; only adjust materials on theme change
 }
 
 watch(

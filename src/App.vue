@@ -19,6 +19,7 @@
                     :height="initialHeight"
                     :url="url"
                     :type="type"
+                    :name="fileName"
                 />
             </div>
         </div>
@@ -47,6 +48,7 @@ const type = ref('image/png')
 const url = ref('')
 const currentTheme = ref(ThemeType.LIGHT)
 const message = ref('')
+const fileName = ref('')
 
 const isDark = computed(() => currentTheme.value === ThemeType.DARK)
 
@@ -79,9 +81,11 @@ const setItem = async (itemId) => {
     const item = await dl.items.get(itemId, {
         timeout: 10000
     })
-    const mimetype = item.metadata.system.mimetype
-    // Supported mimetypes based on FloatingWindow.vue
-    const supported = [
+    fileName.value = item?.name || ''
+
+    const mimetype = item.metadata.system.mimetype || ''
+    // Supported types based on FloatingWindow.vue
+    const supportedMimes = [
         'video', // any video/*
         'image', // any image/*
         'pdf', // application/pdf
@@ -92,10 +96,26 @@ const setItem = async (itemId) => {
         'dicom', // application/dicom, image/dicom, or similar
         'pcd' // point cloud
     ]
-    // Check if mimetype is supported
-    const isSupported = supported.some((type) => mimetype.includes(type))
+    const supportedExts = [
+        '.pcd',
+        '.glb',
+        '.gltf',
+        '.obj',
+        '.stl',
+        '.ply',
+        '.fbx',
+        '.3ds'
+    ]
+    const lowerName = (item?.name || '').toLowerCase()
+
+    // Check if mimetype or extension is supported
+    const isSupported =
+        supportedMimes.some((type) => mimetype?.includes(type)) ||
+        supportedExts.some((ext) => lowerName.endsWith(ext))
     if (!isSupported) {
-        message.value = `This mimetype is not supported: ${mimetype}`
+        const supportedList =
+            'images, videos, audio, pdf, json, txt, dicom, pcd, glb/gltf/obj/stl/ply/fbx/3ds'
+        message.value = `This file type is not supported. Name: ${item?.name || '(unknown)'} | Mimetype: ${mimetype}. Supported: ${supportedList}.`
         loading.value = false
         url.value = ''
         type.value = ''
@@ -119,6 +139,21 @@ const setItem = async (itemId) => {
         mimetype === 'application/pcd'
     ) {
         typeOfContent.value = 'pcd'
+    } else if (item?.name) {
+        const name = item.name.toLowerCase()
+        if (
+            name.endsWith('.glb') ||
+            name.endsWith('.gltf') ||
+            name.endsWith('.obj') ||
+            name.endsWith('.stl') ||
+            name.endsWith('.ply') ||
+            name.endsWith('.fbx') ||
+            name.endsWith('.3ds')
+        ) {
+            typeOfContent.value = 'mesh'
+        } else {
+            typeOfContent.value = mimetype
+        }
     } else {
         typeOfContent.value = mimetype
     }
