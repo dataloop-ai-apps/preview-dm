@@ -4,6 +4,22 @@
         <div v-if="dicomLoading" class="dicomOverlay">
             <dl-spinner text="Loading DICOM..." size="80px" type="grid" />
         </div>
+        <div class="dicomHelp">
+            <div class="infoIcon">i</div>
+            <div class="panel">
+                <div class="lines">
+                    <div>
+                        <b>Left drag</b>: Adjust brightness/contrast
+                        (Window/Level)
+                    </div>
+                    <div><b>Right/Middle drag</b>: Move image (Pan)</div>
+                    <div><b>Ctrl/Cmd + Wheel</b>: Zoom in/out</div>
+                    <div><b>Wheel</b> or <b>Arrow keys</b>: Scroll frames</div>
+                    <div><b>Double-click</b> or <b>R</b>: Reset view</div>
+                    <div><b>I</b>: Invert colors</div>
+                </div>
+            </div>
+        </div>
     </div>
     <div v-else class="content">No media found</div>
 </template>
@@ -28,21 +44,43 @@ const setDicomElement = (el: HTMLDivElement | null) => {
     dicomElement = el
 }
 const dicomLoading = ref<boolean>(false)
+const resetViewport = () => {
+    if (!dicomElement) return
+    try {
+        const enabled = (cornerstone as any).getEnabledElement(dicomElement)
+        const image = enabled?.image
+        if (!image) return
+        const defaultVp = (cornerstone as any).getDefaultViewportForImage(
+            dicomElement,
+            image
+        )
+        ;(cornerstone as any).setViewport(dicomElement, defaultVp)
+    } catch (_) {
+        // ignore
+    }
+}
 
 // Wire externals for the WADO image loader (v2 approach works best with direct file URLs)
 ;(cornerstoneWADOImageLoader as any).external.cornerstone = cornerstone as any
 ;(cornerstoneWADOImageLoader as any).external.dicomParser = dicomParser as any
 ;(cornerstoneWADOImageLoader as any).external.cornerstoneMath =
     cornerstoneMath as any
+// Register the metadata provider so multi-frame and other tags are available
+// Remove custom provider registration to avoid runtime errors in this setup
 
 const enableAndDisplay = async (fileUrl: string) => {
     if (!dicomElement) return
     try {
         dicomLoading.value = true
-        // Keep it simple: avoid extra worker/network requests and retries
+        // Prefer WADO-URI with HTTP Range for faster first-pixel; keep workers off to avoid bundler issues
         ;(cornerstoneWADOImageLoader as any).configure({
             useWebWorkers: false,
-            retryAttempts: 0
+            retryAttempts: 0,
+            strict: false,
+            requestPoolSize: {
+                decode: 1,
+                retrieve: 6
+            }
         })
 
         const element = dicomElement
@@ -54,7 +92,7 @@ const enableAndDisplay = async (fileUrl: string) => {
             cornerstone.enable(element)
         }
 
-        // Fetch the DICOM once, then hand bytes to the loader (prevents multiple failed range requests)
+        // Original approach: fetch the entire file, then use fileManager
         const response = await fetch(fileUrl)
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const buffer = await response.arrayBuffer()
@@ -78,7 +116,7 @@ const enableAndDisplay = async (fileUrl: string) => {
         const baseImageId = (
             cornerstoneWADOImageLoader as any
         ).wadouri.fileManager.add(file)
-        const stackImageIds: string[] =
+        let stackImageIds: string[] =
             numberOfFrames > 1
                 ? Array.from(
                       { length: numberOfFrames },
@@ -97,7 +135,7 @@ const enableAndDisplay = async (fileUrl: string) => {
         ;(cornerstone as any).displayImage(element, image, viewport)
         dicomLoading.value = false
 
-        // Wire simple stack scrolling with mouse wheel and keyboard arrows
+        // Interaction: stack scroll, zoom, pan, WW/WL
         let currentIndex = 0
         const maxIndex = stackImageIds.length - 1
 
@@ -111,8 +149,76 @@ const enableAndDisplay = async (fileUrl: string) => {
 
         const onWheel = (ev: WheelEvent) => {
             ev.preventDefault()
+            if (ev.ctrlKey || ev.metaKey) {
+                // Zoom with wheel when holding Ctrl/Cmd
+                const viewport = (cornerstone as any).getViewport(element)
+                const zoomFactor = ev.deltaY > 0 ? 0.9 : 1.1
+                viewport.scale = Math.max(
+                    0.1,
+                    Math.min(20, viewport.scale * zoomFactor)
+                )
+                ;(cornerstone as any).setViewport(element, viewport)
+                return
+            }
             const delta = ev.deltaY > 0 ? 1 : -1
-            renderIndex(currentIndex + delta)
+            if (maxIndex > 0) renderIndex(currentIndex + delta)
+        }
+
+        // Window/Level (left-drag), Pan (right- or middle-drag)
+        let isWwwc = false
+        let isPanning = false
+        let lastX = 0
+        let lastY = 0
+
+        const onMouseDown = (ev: MouseEvent) => {
+            if (ev.button === 0) {
+                isWwwc = true
+            } else if (ev.button === 2 || ev.button === 1) {
+                isPanning = true
+            }
+            lastX = ev.clientX
+            lastY = ev.clientY
+        }
+
+        const onMouseMove = (ev: MouseEvent) => {
+            if (!isWwwc && !isPanning) return
+            const dx = ev.clientX - lastX
+            const dy = ev.clientY - lastY
+            lastX = ev.clientX
+            lastY = ev.clientY
+
+            const viewport = (cornerstone as any).getViewport(element)
+            if (isWwwc) {
+                const ww = viewport.voi?.windowWidth ?? 400
+                const wc = viewport.voi?.windowCenter ?? 40
+                const wwDelta = dx * 2
+                const wcDelta = -dy * 2
+                viewport.voi = {
+                    windowWidth: Math.max(1, ww + wwDelta),
+                    windowCenter: wc + wcDelta
+                }
+                ;(cornerstone as any).setViewport(element, viewport)
+            } else if (isPanning) {
+                viewport.translation = {
+                    x: (viewport.translation?.x || 0) + dx,
+                    y: (viewport.translation?.y || 0) + dy
+                }
+                ;(cornerstone as any).setViewport(element, viewport)
+            }
+        }
+
+        const onMouseUp = () => {
+            isWwwc = false
+            isPanning = false
+        }
+
+        const onDblClick = () => {
+            resetViewport()
+        }
+
+        const onContextMenu = (ev: MouseEvent) => {
+            // Prevent native context menu to allow right-drag panning
+            ev.preventDefault()
         }
 
         const onKeyDown = (ev: KeyboardEvent) => {
@@ -120,15 +226,32 @@ const enableAndDisplay = async (fileUrl: string) => {
                 renderIndex(currentIndex + 1)
             } else if (ev.key === 'ArrowUp' || ev.key === 'ArrowLeft') {
                 renderIndex(currentIndex - 1)
+            } else if (ev.key.toLowerCase() === 'i') {
+                // Toggle invert
+                const viewport = (cornerstone as any).getViewport(element)
+                viewport.invert = !viewport.invert
+                ;(cornerstone as any).setViewport(element, viewport)
+            } else if (ev.key.toLowerCase() === 'r') {
+                onDblClick()
             }
         }
 
         element.addEventListener('wheel', onWheel, { passive: false })
+        element.addEventListener('mousedown', onMouseDown)
+        element.addEventListener('mousemove', onMouseMove)
+        window.addEventListener('mouseup', onMouseUp)
+        element.addEventListener('dblclick', onDblClick)
+        element.addEventListener('contextmenu', onContextMenu)
         window.addEventListener('keydown', onKeyDown)
 
         // Store cleanup on element for onBeforeUnmount
         ;(element as any).__stackCleanup__ = () => {
             element.removeEventListener('wheel', onWheel)
+            element.removeEventListener('mousedown', onMouseDown)
+            element.removeEventListener('mousemove', onMouseMove)
+            window.removeEventListener('mouseup', onMouseUp)
+            element.removeEventListener('dblclick', onDblClick)
+            element.removeEventListener('contextmenu', onContextMenu)
             window.removeEventListener('keydown', onKeyDown)
             delete (element as any).__stackCleanup__
         }
@@ -206,5 +329,72 @@ onBeforeUnmount(() => {
     justify-content: center;
     align-items: center;
     align-self: center;
+}
+
+.dicomHelp {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    pointer-events: auto;
+}
+
+.dicomHelp .infoIcon {
+    pointer-events: auto;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-family:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        Segoe UI,
+        Roboto,
+        Helvetica,
+        Arial,
+        'Apple Color Emoji',
+        'Segoe UI Emoji';
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #ffffff33;
+    cursor: default;
+}
+
+.dicomHelp .panel {
+    position: absolute;
+    left: 0;
+    bottom: 32px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border-radius: 8px;
+    padding: 10px 12px;
+    backdrop-filter: blur(4px);
+    width: max-content;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+        opacity 120ms ease,
+        transform 120ms ease;
+    pointer-events: none;
+}
+
+.dicomHelp .panel .lines {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.dicomHelp .panel .lines > div {
+    white-space: nowrap;
+}
+
+.dicomHelp:hover .panel {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 </style>

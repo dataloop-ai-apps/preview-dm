@@ -123,7 +123,7 @@ const setItem = async (itemId) => {
         return
     }
     url.value = await dl.items.stream(item.stream, {
-        timeout: 10000
+        timeout: 50000
     })
     type.value = mimetype
     // Normalize DICOM/PCD detection
