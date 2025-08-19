@@ -10,6 +10,9 @@
         "patch": "./patch.sh"
     },
     "dependencies": {
+        "@cornerstonejs/core": "^3.32.12",
+        "@cornerstonejs/dicom-image-loader": "^3.32.12",
+        "@cornerstonejs/tools": "^3.32.12",
         "@dataloop-ai/components": "^0.17.101",
         "@dataloop-ai/icons": "^2.0.9",
         "@dataloop-ai/jssdk": "^0.0.107",

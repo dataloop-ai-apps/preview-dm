@@ -1,6 +1,9 @@
 <template>
     <div v-if="!loading && url.length" class="dicomContainer">
-        <div ref="dicomElement" class="dicomViewport"></div>
+        <div :ref="setDicomElement" class="dicomViewport"></div>
+        <div v-if="dicomLoading" class="dicomOverlay">
+            <dl-spinner text="Loading DICOM..." size="80px" type="grid" />
+        </div>
     </div>
     <div v-else class="content">No media found</div>
 </template>
@@ -11,6 +14,7 @@ import cornerstone from 'cornerstone-core'
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
 import dicomParser from 'dicom-parser'
 import cornerstoneMath from 'cornerstone-math'
+import { DlSpinner } from '@dataloop-ai/components'
 
 /* eslint-disable */
 const props = defineProps<{
@@ -19,21 +23,29 @@ const props = defineProps<{
     isBlackTheme?: boolean
 }>()
 
-const dicomElement = ref<HTMLDivElement | null>(null)
+let dicomElement: HTMLDivElement | null = null
+const setDicomElement = (el: HTMLDivElement | null) => {
+    dicomElement = el
+}
+const dicomLoading = ref<boolean>(false)
 
-// Wire externals for the WADO image loader
-cornerstoneWADOImageLoader.external.cornerstone = cornerstone as any
-cornerstoneWADOImageLoader.external.dicomParser = dicomParser as any
-cornerstoneWADOImageLoader.external.cornerstoneMath = cornerstoneMath as any
+// Wire externals for the WADO image loader (v2 approach works best with direct file URLs)
+;(cornerstoneWADOImageLoader as any).external.cornerstone = cornerstone as any
+;(cornerstoneWADOImageLoader as any).external.dicomParser = dicomParser as any
+;(cornerstoneWADOImageLoader as any).external.cornerstoneMath =
+    cornerstoneMath as any
 
-const enableAndDisplay = async (url: string) => {
-    if (!dicomElement.value) return
-
+const enableAndDisplay = async (fileUrl: string) => {
+    if (!dicomElement) return
     try {
-        // Simpler setup: disable web workers to avoid bundler worker wiring
-        cornerstoneWADOImageLoader.configure({ useWebWorkers: false })
+        dicomLoading.value = true
+        // Keep it simple: avoid extra worker/network requests and retries
+        ;(cornerstoneWADOImageLoader as any).configure({
+            useWebWorkers: false,
+            retryAttempts: 0
+        })
 
-        const element = dicomElement.value
+        const element = dicomElement
         if (
             !(cornerstone as any).enabledElements?.find(
                 (e: any) => e.element === element
@@ -42,13 +54,92 @@ const enableAndDisplay = async (url: string) => {
             cornerstone.enable(element)
         }
 
-        const imageId = `wadouri:${url}`
-        const image = await cornerstone.loadAndCacheImage(imageId)
-        const viewport = cornerstone.getDefaultViewportForImage(element, image)
-        cornerstone.displayImage(element, image, viewport)
-    } catch (e) {
+        // Fetch the DICOM once, then hand bytes to the loader (prevents multiple failed range requests)
+        const response = await fetch(fileUrl)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const buffer = await response.arrayBuffer()
+        const blob = new Blob([buffer], { type: 'application/dicom' })
+        const file = new File([blob], 'image.dcm', {
+            type: 'application/dicom'
+        })
+
+        // Determine number of frames from the DICOM header
+        let numberOfFrames = 1
+        try {
+            const byteArray = new Uint8Array(buffer)
+            const dataSet = (dicomParser as any).parseDicom(byteArray)
+            const framesStr = dataSet?.string?.('x00280008')
+            numberOfFrames = Math.max(1, parseInt(framesStr || '1', 10))
+        } catch (_) {
+            numberOfFrames = 1
+        }
+
+        // Create imageIds for each frame (frame indices are zero-based)
+        const baseImageId = (
+            cornerstoneWADOImageLoader as any
+        ).wadouri.fileManager.add(file)
+        const stackImageIds: string[] =
+            numberOfFrames > 1
+                ? Array.from(
+                      { length: numberOfFrames },
+                      (_, i) => `${baseImageId}?frame=${i}`
+                  )
+                : [baseImageId]
+
+        // Render first frame
+        const image = await (cornerstone as any).loadAndCacheImage(
+            stackImageIds[0]
+        )
+        const viewport = (cornerstone as any).getDefaultViewportForImage(
+            element,
+            image
+        )
+        ;(cornerstone as any).displayImage(element, image, viewport)
+        dicomLoading.value = false
+
+        // Wire simple stack scrolling with mouse wheel and keyboard arrows
+        let currentIndex = 0
+        const maxIndex = stackImageIds.length - 1
+
+        const renderIndex = async (newIndex: number) => {
+            currentIndex = Math.max(0, Math.min(maxIndex, newIndex))
+            const img = await (cornerstone as any).loadAndCacheImage(
+                stackImageIds[currentIndex]
+            )
+            ;(cornerstone as any).displayImage(element, img)
+        }
+
+        const onWheel = (ev: WheelEvent) => {
+            ev.preventDefault()
+            const delta = ev.deltaY > 0 ? 1 : -1
+            renderIndex(currentIndex + delta)
+        }
+
+        const onKeyDown = (ev: KeyboardEvent) => {
+            if (ev.key === 'ArrowDown' || ev.key === 'ArrowRight') {
+                renderIndex(currentIndex + 1)
+            } else if (ev.key === 'ArrowUp' || ev.key === 'ArrowLeft') {
+                renderIndex(currentIndex - 1)
+            }
+        }
+
+        element.addEventListener('wheel', onWheel, { passive: false })
+        window.addEventListener('keydown', onKeyDown)
+
+        // Store cleanup on element for onBeforeUnmount
+        ;(element as any).__stackCleanup__ = () => {
+            element.removeEventListener('wheel', onWheel)
+            window.removeEventListener('keydown', onKeyDown)
+            delete (element as any).__stackCleanup__
+        }
+    } catch (err: any) {
         // eslint-disable-next-line no-console
-        console.error('Failed to display DICOM', e)
+        console.error('[DICOMViewer] Failed to load via WADO-URI', {
+            message: err?.message,
+            name: err?.name,
+            stack: err?.stack
+        })
+        dicomLoading.value = false
     }
 }
 
@@ -64,9 +155,12 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-    if (dicomElement.value) {
+    if (dicomElement) {
         try {
-            cornerstone.disable(dicomElement.value)
+            if ((dicomElement as any).__stackCleanup__) {
+                ;(dicomElement as any).__stackCleanup__()
+            }
+            cornerstone.disable(dicomElement)
         } catch (_) {
             // ignore
         }
@@ -90,6 +184,15 @@ onBeforeUnmount(() => {
     width: 100vw;
     height: 100vh;
     background-color: var(--dl-color-bg);
+}
+
+.dicomOverlay {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.25);
+    pointer-events: none;
 }
 
 .dicomViewport canvas {
