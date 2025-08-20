@@ -22,6 +22,14 @@ import shutil
 import glob
 import subprocess
 from typing import Optional, Tuple
+import dtlpy as dl
+from pathlib import Path
+import logging
+
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def _is_running_in_blender() -> bool:
@@ -120,13 +128,15 @@ def convert_usd_like_to_gltf(input_path: str, output_path: str, fmt: str = "GLB"
     fmt = fmt.upper()
     if fmt not in ("GLB", "GLTF_EMBEDDED", "GLTF"):
         raise ValueError("format must be GLB or GLTF_EMBEDDED")
-
     src = os.path.abspath(input_path)
     if not os.path.exists(src):
         raise FileNotFoundError(f"Input not found: {src}")
 
-    out = _normalize_output_path(os.path.abspath(output_path), fmt)
+    output_path = '/tmp/app/' + Path(input_path).with_suffix('.glb').name
+    print(output_path)
 
+    out = _normalize_output_path(os.path.abspath(output_path), fmt)
+    print('out', out)
     tmp_dir = None
     stage_path = src
     try:
@@ -150,8 +160,7 @@ def _parse_args(argv):
     p = argparse.ArgumentParser(
         description="Convert USD/USDA/USDC/USDB/USDZ (or folder) → GLB or GLTF(embedded) via Blender"
     )
-    p.add_argument("--input", required=True, help="Path to .usd/.usda/.usdc/.usdb/.usdz or a folder containing them")
-    p.add_argument("--output", required=True, help="Path to output (.glb or .gltf)")
+    p.add_argument("--item_id", required=True, help="Item ID of file which is .usd/.usda/.usdc/.usdb/.usdz")
     p.add_argument(
         "--format",
         default="GLB",
@@ -164,15 +173,26 @@ def _parse_args(argv):
 
 def main():
     args = _parse_args(sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else sys.argv[1:])
+    main_item = dl.items.get(item_id=args.item_id)
+    input_path = main_item.download(save_locally=True)
+    output_path = '/tmp/app/' + Path(input_path).with_suffix('.glb').name
     if not _is_running_in_blender() and args.blender_mode != "1":
-        out = _normalize_output_path(os.path.abspath(args.output), args.format)
-        _spawn_blender_this_script(os.path.abspath(args.input), out, args.format)
+        out = _normalize_output_path(os.path.abspath(output_path), args.format)
+        _spawn_blender_this_script(os.path.abspath(input_path), out, args.format)
         print(out)
         return
 
-    out = convert_usd_like_to_gltf(args.input, args.output, args.format)
-    print(out)
+    out = convert_usd_like_to_gltf(input_path, output_path, args.format)
+    # modality_item = main_item.project.datasets._get_binaries_dataset().items.upload(local_path=out, remote_path='/dm_preview')
+    # # Create a modality link for the main item
+    # main_item.modalities.create(
+    #     name='Preview',        # Name for the modality
+    #     modality_type=dl.ModalityTypeEnum.PREVIEW,  # Type of modality
+    #     ref=modality_item.id        # Reference the modality item
+    # )
 
+    # # Update the main item to apply changes
+    # main_item.update()
 
 if __name__ == "__main__":
     main()

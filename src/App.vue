@@ -76,11 +76,35 @@ onMounted(async () => {
     })
 })
 
+const isUsdFile = (name) => {
+    const validExts = ['.usd', '.usdz', '.usda', '.usdb']
+    return validExts.some((ext) => name.toLowerCase().endsWith(ext))
+}
+
 const setItem = async (itemId) => {
     loading.value = true
-    const item = await dl.items.get(itemId, {
+    let item = await dl.items.get(itemId, {
         timeout: 10000
     })
+
+    if (isUsdFile(item.name)) {
+        const previewModality = item.metadata.system?.modalities?.find(
+            (m) => m.type === 'preview'
+        )
+        if (previewModality) {
+            item = await dl.items.get(previewModality.ref, {
+                timeout: 10000
+            })
+            console.log('using preview modality', item.name)
+        } else {
+            message.value = 'No preview modality found for USD file'
+            loading.value = false
+            url.value = ''
+            type.value = ''
+            typeOfContent.value = ''
+            return
+        }
+    }
     fileName.value = item?.name || ''
 
     const mimetype = item.metadata.system.mimetype || ''
@@ -129,14 +153,12 @@ const setItem = async (itemId) => {
     // Normalize DICOM/PCD detection
     if (
         mimetype.includes('dicom') ||
-        mimetype === 'application/dicom' ||
-        mimetype === 'application/dicom+json'
+        (item?.name && item.name.toLowerCase().endsWith('.dcm'))
     ) {
         typeOfContent.value = 'dicom'
     } else if (
         (item?.name && item.name.toLowerCase().endsWith('.pcd')) ||
-        mimetype.includes('pcd') ||
-        mimetype === 'application/pcd'
+        mimetype.includes('pcd')
     ) {
         typeOfContent.value = 'pcd'
     } else if (item?.name) {
