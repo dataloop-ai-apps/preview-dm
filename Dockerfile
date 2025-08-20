@@ -14,6 +14,11 @@ RUN PKG=blender-${BLENDER_VERSION}-linux-x64.tar.xz \
  && rm ${PKG} \
  && ln -s /opt/blender-${BLENDER_VERSION}-linux-* /opt/blender
 
+ RUN BL_PY="$(/opt/blender/blender -b --python-expr 'import sys; print(sys.executable)' | head -n1)" \
+ && "$BL_PY" -m ensurepip --upgrade \
+ && "$BL_PY" -m pip install --upgrade pip \
+ && "$BL_PY" -m pip install --no-cache-dir dtlpy
+
 ENV PATH="/opt/blender:${PATH}"
 COPY usd_to_gltf.py /opt/convert.py
 
