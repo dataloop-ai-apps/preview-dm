@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--dl-color-studio-panel);
+  color: var(--dl-color-darker);
+}
+
+.full-screen {
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--dl-color-studio-panel);
+}
