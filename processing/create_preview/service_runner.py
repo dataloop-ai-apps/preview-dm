@@ -1,12 +1,6 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from tqdm import tqdm
 import dtlpy as dl
-import numpy as np
 import logging
-import shutil
 import time
-import cv2
-import os
 import subprocess
 
 logger = logging.getLogger('quality-estimator')
@@ -45,41 +39,44 @@ class ServiceRunner(dl.BaseServiceRunner):
 
         try:
             # Run Blender command to convert USD to GLB
-            blender_script_path = "/tmp/app/processing/create_preview/usd_to_gltf.py"
+            blender_script_path = "./processing/create_preview/usd_to_gltf.py"
             
             cmd = f"blender -b -P {blender_script_path} -- --item_id {item_id} --format GLB"
             
             logger.info(f"Running Blender conversion command: {cmd}")
             
-            # Run the command and wait for completion
-            result = subprocess.run(
+            # Live-stream process output with timeout
+            start_time = time.time()
+            output_lines = []
+            with subprocess.Popen(
                 cmd,
-                shell=True,  # Required when using string command
-                capture_output=True,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,  # merge stderr into stdout for ordered logs
                 text=True,
-                timeout=300,  # 5 minu te timeout
-                check=False
-            )
+                bufsize=1,
+                universal_newlines=True
+            ) as process:
+                assert process.stdout is not None
+                for line in process.stdout:
+                    stripped_line = line.rstrip()
+                    output_lines.append(stripped_line)
+                    logger.info(stripped_line)
+                    # Enforce 5-minute timeout
+                    if time.time() - start_time > 300:
+                        process.kill()
+                        logger.error("Blender conversion timed out after 5 minutes")
+                        raise RuntimeError("Blender conversion timed out")
+                return_code = process.wait()
 
-            print('success')
-            print(result.stdout)
-            print(result.stderr)
-            print(result.returncode)
-            print('koniec')
+            if return_code != 0:
+                logger.error(f"Blender conversion failed with return code {return_code}")
+                if output_lines:
+                    logger.error("Process output (combined):\n%s", "\n".join(output_lines))
+                raise RuntimeError(f"Blender conversion failed with code {return_code}")
 
-            
-            if result.returncode != 0:
-                logger.error(f"Blender conversion failed with return code {result.returncode}")
-                logger.error(f"STDOUT: {result.stdout}")
-                logger.error(f"STDERR: {result.stderr}")
-                raise RuntimeError(f"Blender conversion failed: {result.stderr}")
-            
             logger.info("Blender conversion completed successfully")
-            logger.info(f"STDOUT: {result.stdout}")
-            
-        except subprocess.TimeoutExpired:
-            logger.error("Blender conversion timed out after 5 minutes")
-            raise RuntimeError("Blender conversion timed out")
+
         except Exception as e:
             logger.error(f"Error running Blender conversion: {str(e)}")
             raise
