@@ -5,7 +5,7 @@ import os
 import shlex
 from typing import Sequence, Optional, Mapping
 
-logger = logging.getLogger('service-runner')
+logger = logging.getLogger('utils')
 
 def run_and_stream(
     command: Sequence[str] | str,

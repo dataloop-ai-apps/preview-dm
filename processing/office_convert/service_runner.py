@@ -2,7 +2,7 @@ import dtlpy as dl
 import logging
 import tempfile
 from pathlib import Path
-from processing.default_service_runner import run_and_stream
+from processing.utils import run_and_stream
 
 logger = logging.getLogger('office-convert')
 
