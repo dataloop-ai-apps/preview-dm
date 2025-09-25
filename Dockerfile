@@ -43,7 +43,15 @@ RUN BL_PY="$(/opt/blender/blender -b --python-expr 'import sys; print(sys.execut
 
 ENV PATH="/opt/blender:${PATH}"
 
-RUN pip install --user dtlpy
+# Ensure /tmp is writable for non-root users (sticky bit 1777)
+RUN mkdir -p /tmp && chmod 1777 /tmp
+
+
+USER 1000
+
+ENV HOME=/tmp
+
+RUN pip install --user dtlpy pydicom
 
 
 

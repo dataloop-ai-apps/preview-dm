@@ -1,0 +1,80 @@
+{
+    "name": "generate-thumbnail-dicom",
+    "displayName": "Generate Thumbnail for DICOM files",
+    "description": "Create a PNG thumbnail from the first frame of DICOM files",
+    "version": "0.0.1",
+    "scope": "project",
+    "attributes": {
+        "Category": "Application",
+        "Provider": "Dataloop",
+        "Application Type": "Function",
+        "Media Type": ["Medical"],
+        "License": "Apache 2.0"
+    },
+    "components": {
+        "modules": [
+            {
+                "name": "generate_thumbnail_dicom",
+                "entryPoint": "processing/generate_thumbnail_dicom/service_runner.py",
+                "className": "ServiceRunner",
+                "functions": [
+                    {
+                        "name": "generate_thumbnail",
+                        "description": "Generate a PNG thumbnail for a DICOM file",
+                        "input": [{ "type": "Item", "name": "item" }],
+                        "output": [],
+                        "displayName": "DICOM to PNG Thumbnail"
+                    }
+                ]
+            }
+        ],
+        "services": [
+            {
+                "name": "generate-thumbnail-dicom",
+                "moduleName": "generate_thumbnail_dicom",
+                "runtime": {
+                    "podType": "regular-m",
+                    "concurrency": 10,
+                    "runnerImage": "gcr.io/viewo-g/piper/agent/cpu/preview-processing:0.0.5",
+                    "autoscaler": {
+                        "type": "rabbitmq",
+                        "minReplicas": 1,
+                        "maxReplicas": 2,
+                        "queueLength": 100
+                    }
+                },
+                "executionTimeout": 600
+            }
+        ],
+        "triggers": [
+            {
+                "name": "generate-thumbnail-dicom-on-item",
+                "active": true,
+                "type": "Event",
+                "namespace": "services.generate-thumbnail-dicom",
+                "spec": {
+                    "filter": {
+                        "$and": [
+                            {
+                                "$or": [
+                                    { "filename": "*.dcm" },
+                                    { "filename": "*.dicom" }
+                                ]
+                            },
+                            { "hidden": false },
+                            { "type": "file" }
+                        ]
+                    },
+                    "executionMode": "Always",
+                    "resource": "Item",
+                    "actions": ["Created"],
+                    "input": {},
+                    "operation": {
+                        "type": "function",
+                        "functionName": "generate_thumbnail"
+                    }
+                }
+            }
+        ]
+    }
+}

@@ -17,12 +17,14 @@ import os
 import sys
 import argparse
 import subprocess
+import importlib
 from typing import Optional, TYPE_CHECKING
 import dtlpy as dl
 from pathlib import Path
 import uuid
 import logging
 import math
+import tempfile
 
 if TYPE_CHECKING:
     from mathutils import Vector
@@ -30,22 +32,12 @@ if TYPE_CHECKING:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-def _is_running_in_blender() -> bool:
-    try:
-        import bpy  # noqa: F401
-        return True
-    except ImportError:
-        return False
-
-
 def _blender_exec_path() -> Optional[str]:
     return os.environ.get("BLENDER_PATH") or "blender"
 
-
 def _import_mesh_file(filepath: str) -> None:
     """Import mesh file based on extension"""
-    import bpy
+    bpy = importlib.import_module("bpy")
     
     ext = os.path.splitext(filepath)[1].lower()
     
@@ -72,8 +64,8 @@ def _import_mesh_file(filepath: str) -> None:
                     try:
                         bpy.ops.preferences.addon_enable(module="io_mesh_stl")
                         bpy.ops.import_mesh.stl(filepath=filepath)
-                    except Exception:
-                        raise RuntimeError(f"STL importer not available in this Blender version")
+                    except Exception as exc:
+                        raise RuntimeError("STL importer not available in this Blender version") from exc
 
         elif ext == '.ply':
             # Try newer API first, fall back to older
@@ -92,8 +84,8 @@ def _import_mesh_file(filepath: str) -> None:
                 try:
                     bpy.ops.preferences.addon_enable(module="io_scene_fbx")
                     bpy.ops.import_scene.fbx(filepath=filepath)
-                except Exception:
-                    raise RuntimeError(f"FBX importer not available in this Blender version")
+                except Exception as exc:
+                    raise RuntimeError("FBX importer not available in this Blender version") from exc
         elif ext == '.3ds':
             # 3DS import - should work natively in Blender 4.1.1
             logger.info(f"Importing 3DS file: {filepath}")
@@ -159,7 +151,9 @@ def _import_mesh_file(filepath: str) -> None:
                     
             except Exception as e:
                 logger.error(f"3DS import failed: {e}")
-                raise RuntimeError(f"Failed to import 3DS file. Blender 4.1.1 should support 3DS natively. Error: {str(e)}")
+                raise RuntimeError(
+                    "Failed to import 3DS file. Blender 4.1.1 should support 3DS natively."
+                ) from e
             
             # 3DS files: Handle lights and rotation to match Three.js orientation
             _handle_3ds_post_import()
@@ -168,25 +162,21 @@ def _import_mesh_file(filepath: str) -> None:
     except Exception as e:
         raise RuntimeError(f"Failed to import {ext} file '{filepath}': {str(e)}") from e
 
-
 def _handle_3ds_post_import() -> None:
     """Handle 3DS-specific post-import tasks: adjust materials and apply correct rotation"""
-    import bpy
-    
+    importlib.import_module("bpy")
     logger.info("Handling 3DS post-import tasks...")
     
     # Debug and potentially adjust 3DS materials to better match Three.js
     # _debug_and_adjust_3ds_materials()
     _fix_orientation(rotation_axis='X', rotation_value=90)
 
-
-    
     logger.info("3DS post-import handling completed")
 
 
 def _debug_and_adjust_3ds_materials() -> None:
     """Debug and adjust 3DS materials to better match Three.js behavior"""
-    import bpy
+    bpy = importlib.import_module("bpy")
     
     logger.info("Debugging 3DS materials...")
     
@@ -237,8 +227,7 @@ def _debug_and_adjust_3ds_materials() -> None:
 
 def _fix_orientation(rotation_axis: str, rotation_value: float) -> None:
     """Fix PLY and 3DS file orientation to match Three.js display"""
-    import bpy
-    import math
+    bpy = importlib.import_module("bpy")
     
     # Get all mesh objects that were just imported
     mesh_objects = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH']
@@ -274,22 +263,9 @@ def _fix_orientation(rotation_axis: str, rotation_value: float) -> None:
             # Deselect this object before moving to the next
             obj.select_set(False)
 
-
-def _enable_required_addons() -> None:
-    """Enable all required addons for mesh importing"""
-    import bpy
-    
-    # Only enable addons when actually needed during import
-    # This avoids trying to enable non-existent addons upfront
-    pass
-
-
 def _setup_scene_for_preview() -> None:
     """Set up optimal lighting, camera, and materials for mesh preview"""
-    import bpy
-    
-    # Enable required addons first
-    _enable_required_addons()
+    bpy = importlib.import_module("bpy")
     
     # Clear existing scene
     bpy.ops.object.select_all(action='SELECT')
@@ -330,7 +306,7 @@ def _setup_scene_for_preview() -> None:
 
 def _add_fallback_lighting_if_needed() -> None:
     """Add default lighting only if the imported file has no lights"""
-    import bpy
+    bpy = importlib.import_module("bpy")
     
     # Check if the imported file brought any lights
     imported_lights = [obj for obj in bpy.context.scene.objects if obj.type == 'LIGHT']
@@ -349,8 +325,9 @@ def _add_fallback_lighting_if_needed() -> None:
 
 def _position_camera_for_object() -> None:
     """Position camera optimally to frame the imported object(s) - front-facing view like MeshViewer.vue"""
-    import bpy
-    from mathutils import Vector
+    bpy = importlib.import_module("bpy")
+    mathutils = importlib.import_module("mathutils")
+    Vector = mathutils.Vector
     
     # Get all mesh objects
     mesh_objects = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH']
@@ -408,13 +385,9 @@ def _position_camera_for_object() -> None:
     camera.data.clip_start = distance / 100
     camera.data.clip_end = distance * 100
 
-
-
-
-
 def _enhance_materials() -> None:
     """Apply fallback materials only when none exist (matching MeshViewer.vue behavior)"""
-    import bpy
+    bpy = importlib.import_module("bpy")
     
     objects_with_materials = 0
     objects_needing_materials = 0
@@ -454,7 +427,7 @@ def _enhance_materials() -> None:
 
 def _run_under_blender(input_path: str, output_path: str, resolution: int) -> None:
     """Main Blender execution function"""
-    import bpy
+    bpy = importlib.import_module("bpy")
     
     # Start with clean scene
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -488,30 +461,6 @@ def _run_under_blender(input_path: str, output_path: str, resolution: int) -> No
     bpy.context.scene.render.filepath = output_path
     bpy.ops.render.render(write_still=True)
 
-
-def _spawn_blender_this_script(input_path: str, output_path: str, resolution: int) -> None:
-    """Spawn Blender subprocess to run this script"""
-    blender = _blender_exec_path()
-    cmd = [
-        blender,
-        "-b",
-        "-P",
-        os.path.abspath(__file__),
-        "--",
-        "--input",
-        input_path,
-        "--output", 
-        output_path,
-        "--resolution",
-        str(resolution),
-        "--blender-mode",
-        "1",
-    ]
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
-    if proc.returncode != 0:
-        raise RuntimeError(f"Blender failed (code {proc.returncode}):\n{proc.stdout}")
-
-
 def convert_mesh_to_png(input_path: str, output_path: str, resolution: int = 1024) -> str:
     """
     Convert mesh file to PNG preview image.
@@ -522,7 +471,7 @@ def convert_mesh_to_png(input_path: str, output_path: str, resolution: int = 102
         raise FileNotFoundError(f"Input not found: {src}")
     
     # Validate file extension
-    supported_exts = ['.glb', '.gltf', '.obj', '.stl', '.ply', '.fbx', '.3ds']
+    supported_exts = ['.glb', '.gltf', '.obj', '.stl', '.ply', '.fbx', '.3ds', '.usd', '.usda', '.usdc', '.usdb', '.usdz']
     ext = os.path.splitext(src)[1].lower()
     if ext not in supported_exts:
         raise ValueError(f"Unsupported file format: {ext}. Supported: {', '.join(supported_exts)}")
@@ -530,10 +479,9 @@ def convert_mesh_to_png(input_path: str, output_path: str, resolution: int = 102
     out = os.path.abspath(output_path)
     os.makedirs(os.path.dirname(out), exist_ok=True)
     
-    if _is_running_in_blender():
-        _run_under_blender(src, out, resolution)
-    else:
-        _spawn_blender_this_script(src, out, resolution)
+
+    _run_under_blender(src, out, resolution)
+   
     
     if not os.path.exists(out):
         raise RuntimeError(f"Failed to create output file: {out}")
@@ -546,8 +494,7 @@ def _parse_args(argv):
         description="Convert mesh files to PNG preview images via Blender"
     )
     p.add_argument("--item_id", required=True, help="Item ID of mesh file")
-    p.add_argument("--input", help="Input file path (used internally by Blender subprocess)")
-    p.add_argument("--output", help="Output file path (used internally by Blender subprocess)")
+    p.add_argument("--main_item_id", help="Item ID of main item")
     p.add_argument(
         "--resolution",
         type=int,
@@ -567,38 +514,30 @@ def main():
         return
     
     # Main mode: handle Dataloop item
-    main_item = dl.items.get(item_id=args.item_id)
-    input_path = main_item.download(save_locally=True)
+    if args.main_item_id:
+        main_item = dl.items.get(item_id=args.main_item_id)
+    else:
+        main_item = dl.items.get(item_id=args.item_id)
+
+    item = dl.items.get(item_id=args.item_id)
+    input_path = item.download(save_locally=True)
     
     # Generate unique output path
     output_filename = Path(input_path).stem + '_preview.png'
-    output_path = '/tmp/app/' + str(uuid.uuid4().hex) + '_' + output_filename
+    output_path = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4().hex}_{output_filename}")
     
-    if not _is_running_in_blender() and args.blender_mode != "1":
-        # Spawn Blender subprocess
-        _spawn_blender_this_script(os.path.abspath(input_path), output_path, args.resolution)
-    else:
-        # Direct conversion (shouldn't happen in normal usage)
-        convert_mesh_to_png(input_path, output_path, args.resolution)
+    convert_mesh_to_png(input_path, output_path, args.resolution)
     
     # Upload preview to Dataloop
-    # modality_item = main_item.project.datasets._get_binaries_dataset().items.upload(
-    #     local_path=output_path, 
-    #     remote_path='/dm_preview'
-    # )
+    thumbnail_item = main_item.dataset.items.upload(
+        local_path=output_path, 
+        remote_path='.dataloop/'
+    )
     
-    # # Create a modality link for the main item
-    # main_item.modalities.create(
-    #     name='Preview',
-    #     modality_type=dl.ModalityTypeEnum.PREVIEW,
-    #     ref=modality_item.id
-    # )
-    
-    # # Update the main item to apply changes
-    # main_item.update()
+    main_item.metadata['system']['thumbnailId'] = thumbnail_item.id
+    main_item.update(system_metadata = True)
     
     logger.info(f"Successfully created preview for mesh file: {main_item.name}")
-    print(f"Preview created: {output_path}")
 
 
 if __name__ == "__main__":

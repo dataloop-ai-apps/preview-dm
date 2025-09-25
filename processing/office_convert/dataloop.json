@@ -1,0 +1,90 @@
+{
+    "name": "office-to-pdf-preview",
+    "displayName": "Convert Office to PDF Preview",
+    "description": "Convert Office files (Word/Excel/PowerPoint) to PDF and attach as Preview modality.",
+    "version": "0.0.1",
+    "scope": "project",
+    "attributes": {
+        "Category": "Application",
+        "Provider": "Dataloop",
+        "Application Type": "Function",
+        "Media Type": ["Document"],
+        "License": "Apache 2.0"
+    },
+    "components": {
+        "modules": [
+            {
+                "name": "office_convert",
+                "entryPoint": "processing/office_convert/service_runner.py",
+                "className": "ServiceRunner",
+                "functions": [
+                    {
+                        "name": "convert_to_pdf",
+                        "description": "Convert an Office document to PDF and set as Preview",
+                        "input": [{ "type": "Item", "name": "item" }],
+                        "output": [],
+                        "displayName": "Office to PDF Preview"
+                    }
+                ]
+            }
+        ],
+        "services": [
+            {
+                "name": "office-to-pdf-preview",
+                "moduleName": "office_convert",
+                "runtime": {
+                    "podType": "regular-m",
+                    "concurrency": 5,
+                    "runnerImage": "gcr.io/viewo-g/piper/agent/cpu/preview-processing:0.0.5",
+                    "autoscaler": {
+                        "type": "rabbitmq",
+                        "minReplicas": 1,
+                        "maxReplicas": 2,
+                        "queueLength": 50
+                    }
+                },
+                "executionTimeout": 900
+            }
+        ],
+        "triggers": [
+            {
+                "name": "office-to-pdf-on-item",
+                "active": true,
+                "type": "Event",
+                "namespace": "services.office-to-pdf-preview",
+                "spec": {
+                    "filter": {
+                        "$and": [
+                            {
+                                "$or": [
+                                    { "filename": "*.doc" },
+                                    { "filename": "*.docx" },
+                                    { "filename": "*.rtf" },
+                                    { "filename": "*.odt" },
+                                    { "filename": "*.xls" },
+                                    { "filename": "*.xlsx" },
+                                    { "filename": "*.xlsm" },
+                                    { "filename": "*.xlsb" },
+                                    { "filename": "*.ods" },
+                                    { "filename": "*.ppt" },
+                                    { "filename": "*.pptx" },
+                                    { "filename": "*.odp" }
+                                ]
+                            },
+                            { "hidden": false },
+                            { "type": "file" }
+                        ]
+                    },
+                    "executionMode": "Always",
+                    "resource": "Item",
+                    "actions": ["Created"],
+                    "input": {},
+                    "operation": {
+                        "type": "function",
+                        "functionName": "convert_to_pdf"
+                    }
+                }
+            }
+        ]
+    }
+}
