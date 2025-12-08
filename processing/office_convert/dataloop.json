@@ -2,8 +2,13 @@
     "name": "office-to-pdf-preview",
     "displayName": "Convert Office to PDF Preview",
     "description": "Convert Office files (Word/Excel/PowerPoint) to PDF and attach as Preview modality.",
-    "version": "0.0.1",
-    "scope": "project",
+    "version": "0.0.10",
+    "scope": "public",
+    "codebase": {
+        "type": "git",
+        "gitUrl": "https://github.com/dataloop-ai-apps/preview-dm.git",
+        "gitTag": "0.0.10"
+    },
     "attributes": {
         "Category": "Application",
         "Provider": "Dataloop",
