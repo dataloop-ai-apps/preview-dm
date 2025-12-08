@@ -2,13 +2,12 @@
 """
 Convert mesh files (.glb, .gltf, .obj, .stl, .ply, .fbx, .3ds) to PNG preview images using Blender headless.
 
-Usage (with Blender installed):
-  python3 mesh_to_png.py --item_id <dataloop_item_id> --resolution 1024
+Usage:
   blender -b -P mesh_to_png.py -- --item_id <dataloop_item_id> --resolution 1024
 
 Notes:
   - Requires Blender 3.x+ with appropriate importers
-  - If run outside Blender, this script spawns Blender automatically (use BLENDER_PATH env or keep blender on PATH)
+  - Must be run via Blender (blender -b -P script.py)
   - Full support: .glb, .gltf, .obj, .stl, .ply, .fbx, .3ds formats
   - Creates optimized camera angle and lighting for preview
 """
@@ -16,29 +15,22 @@ Notes:
 import os
 import sys
 import argparse
-import subprocess
-import importlib
-from typing import Optional, TYPE_CHECKING
-import dtlpy as dl
-from pathlib import Path
+import tempfile
+import math
 import uuid
 import logging
-import math
-import tempfile
+from pathlib import Path
 
-if TYPE_CHECKING:
-    from mathutils import Vector
+import bpy
+from mathutils import Vector
+import dtlpy as dl
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def _blender_exec_path() -> Optional[str]:
-    return os.environ.get("BLENDER_PATH") or "blender"
 
 def _import_mesh_file(filepath: str) -> None:
     """Import mesh file based on extension"""
-    bpy = importlib.import_module("bpy")
-    
     ext = os.path.splitext(filepath)[1].lower()
     
     try:
@@ -164,7 +156,6 @@ def _import_mesh_file(filepath: str) -> None:
 
 def _handle_3ds_post_import() -> None:
     """Handle 3DS-specific post-import tasks: adjust materials and apply correct rotation"""
-    importlib.import_module("bpy")
     logger.info("Handling 3DS post-import tasks...")
     
     # Debug and potentially adjust 3DS materials to better match Three.js
@@ -176,8 +167,6 @@ def _handle_3ds_post_import() -> None:
 
 def _debug_and_adjust_3ds_materials() -> None:
     """Debug and adjust 3DS materials to better match Three.js behavior"""
-    bpy = importlib.import_module("bpy")
-    
     logger.info("Debugging 3DS materials...")
     
     # Check all materials in the scene
@@ -227,8 +216,6 @@ def _debug_and_adjust_3ds_materials() -> None:
 
 def _fix_orientation(rotation_axis: str, rotation_value: float) -> None:
     """Fix PLY and 3DS file orientation to match Three.js display"""
-    bpy = importlib.import_module("bpy")
-    
     # Get all mesh objects that were just imported
     mesh_objects = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH']
     
@@ -265,8 +252,6 @@ def _fix_orientation(rotation_axis: str, rotation_value: float) -> None:
 
 def _setup_scene_for_preview() -> None:
     """Set up optimal lighting, camera, and materials for mesh preview"""
-    bpy = importlib.import_module("bpy")
-    
     # Clear existing scene
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
@@ -306,8 +291,6 @@ def _setup_scene_for_preview() -> None:
 
 def _add_fallback_lighting_if_needed() -> None:
     """Add default lighting only if the imported file has no lights"""
-    bpy = importlib.import_module("bpy")
-    
     # Check if the imported file brought any lights
     imported_lights = [obj for obj in bpy.context.scene.objects if obj.type == 'LIGHT']
     
@@ -325,10 +308,6 @@ def _add_fallback_lighting_if_needed() -> None:
 
 def _position_camera_for_object() -> None:
     """Position camera optimally to frame the imported object(s) - front-facing view like MeshViewer.vue"""
-    bpy = importlib.import_module("bpy")
-    mathutils = importlib.import_module("mathutils")
-    Vector = mathutils.Vector
-    
     # Get all mesh objects
     mesh_objects = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH']
     
@@ -387,8 +366,6 @@ def _position_camera_for_object() -> None:
 
 def _enhance_materials() -> None:
     """Apply fallback materials only when none exist (matching MeshViewer.vue behavior)"""
-    bpy = importlib.import_module("bpy")
-    
     objects_with_materials = 0
     objects_needing_materials = 0
     
@@ -427,8 +404,6 @@ def _enhance_materials() -> None:
 
 def _run_under_blender(input_path: str, output_path: str, resolution: int) -> None:
     """Main Blender execution function"""
-    bpy = importlib.import_module("bpy")
-    
     # Start with clean scene
     bpy.ops.wm.read_factory_settings(use_empty=True)
     

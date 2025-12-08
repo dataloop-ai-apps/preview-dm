@@ -2,13 +2,12 @@
 """
 Convert .usd/.usda/.usdc/.usdb/.usdz to GLB or glTF (embedded) using Blender headless.
 
-Usage (with Blender installed):
-  python3 usd_to_gltf.py --input /path/model.usdz --output /path/model.glb --format GLB
-  blender -b -P usd_to_gltf.py -- --input /path/model.usd --output /path/model.gltf --format GLTF_EMBEDDED
+Usage:
+  blender -b -P usd_to_gltf.py -- --item_id <dataloop_item_id> --format GLB
 
 Notes:
   - Requires Blender 3.x with USD importer (standard builds include it)
-  - If run outside Blender, this script spawns Blender automatically (use BLENDER_PATH env or keep blender on PATH)
+  - Must be run via Blender (blender -b -P script.py)
   - USDZ is unzipped to a temp folder and the stage (.usda/.usd/.usdc/.usdb) inside is imported
   - If --input is a directory, we scan it for a main USD stage file (preferring .usda, then .usd, then .usdc/.usdb)
 """
@@ -20,23 +19,16 @@ import tempfile
 import zipfile
 import shutil
 import glob
-import subprocess
-from typing import Optional, Tuple
-import dtlpy as dl
-from pathlib import Path
 import uuid
 import logging
+from typing import Tuple
+from pathlib import Path
+
+import bpy
+import dtlpy as dl
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-def _is_running_in_blender() -> bool:
-    try:
-        import bpy  # noqa: F401
-        return True
-    except Exception:
-        return False
 
 
 def _find_stage_in_dir(dir_path: str) -> str:
@@ -75,13 +67,7 @@ def _normalize_output_path(out_path: str, fmt: str) -> str:
     return out_path
 
 
-def _blender_exec_path() -> Optional[str]:
-    return os.environ.get("BLENDER_PATH") or "blender"
-
-
 def _run_under_blender(input_path: str, output_path: str, fmt: str) -> None:
-    import bpy  # type: ignore
-
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.wm.usd_import(filepath=input_path)
 
@@ -121,10 +107,7 @@ def convert_usd_like_to_gltf(input_path: str, fmt: str = "GLB") -> str:
             tmp_dir = tempfile.mkdtemp(prefix="usdz_")
             stage_path = _find_stage_in_usdz(src, tmp_dir)
 
-        if _is_running_in_blender():
-            _run_under_blender(stage_path, out, fmt)
-        else:
-            logger.info("Blender is not running, skipping conversion")
+        _run_under_blender(stage_path, out, fmt)
         return out
     finally:
         if tmp_dir and os.path.isdir(tmp_dir):
