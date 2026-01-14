@@ -102,7 +102,6 @@ const initializeApp = async () => {
                 dl.on(DlEvent.THEME, (data) => {
                     currentTheme.value = data
                 })
-                throw new Error('test')
                 dl.on('items:selection:updated', async (data) => {
                     errorState.value = null
                     message.value = ''
