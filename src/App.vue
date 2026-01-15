@@ -2,7 +2,7 @@
     <dl-theme-provider :is-dark="isDark">
         <div class="full-screen">
             <div v-if="loading && !errorState" class="loading-spinner">
-                <dl-spinner text="Loading App..." size="100px" type="grid" />
+                <dl-spinner v-bind="{type:'circle',color:'var(--dl-color-darker)', text:'Loading item preview...'}" />
             </div>
 
             <div v-else>
