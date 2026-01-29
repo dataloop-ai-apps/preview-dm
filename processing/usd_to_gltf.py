@@ -2,13 +2,12 @@
 """
 Convert .usd/.usda/.usdc/.usdb/.usdz to GLB or glTF (embedded) using Blender headless.
 
-Usage (with Blender installed):
-  python3 usd_to_gltf.py --input /path/model.usdz --output /path/model.glb --format GLB
-  blender -b -P usd_to_gltf.py -- --input /path/model.usd --output /path/model.gltf --format GLTF_EMBEDDED
+Usage:
+  blender -b -P usd_to_gltf.py -- --item_id <dataloop_item_id> --format GLB
 
 Notes:
   - Requires Blender 3.x with USD importer (standard builds include it)
-  - If run outside Blender, this script spawns Blender automatically (use BLENDER_PATH env or keep blender on PATH)
+  - Must be run via Blender (blender -b -P script.py)
   - USDZ is unzipped to a temp folder and the stage (.usda/.usd/.usdc/.usdb) inside is imported
   - If --input is a directory, we scan it for a main USD stage file (preferring .usda, then .usd, then .usdc/.usdb)
 """
@@ -20,23 +19,16 @@ import tempfile
 import zipfile
 import shutil
 import glob
-import subprocess
-from typing import Optional, Tuple
-import dtlpy as dl
-from pathlib import Path
 import uuid
 import logging
+from typing import Tuple
+from pathlib import Path
+
+import bpy
+import dtlpy as dl
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-def _is_running_in_blender() -> bool:
-    try:
-        import bpy  # noqa: F401
-        return True
-    except Exception:
-        return False
 
 
 def _find_stage_in_dir(dir_path: str) -> str:
@@ -75,13 +67,7 @@ def _normalize_output_path(out_path: str, fmt: str) -> str:
     return out_path
 
 
-def _blender_exec_path() -> Optional[str]:
-    return os.environ.get("BLENDER_PATH") or "blender"
-
-
 def _run_under_blender(input_path: str, output_path: str, fmt: str) -> None:
-    import bpy  # type: ignore
-
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.wm.usd_import(filepath=input_path)
 
@@ -96,30 +82,7 @@ def _run_under_blender(input_path: str, output_path: str, fmt: str) -> None:
         use_selection=False,
     )
 
-
-def _spawn_blender_this_script(input_path: str, output_path: str, fmt: str) -> None:
-    blender = _blender_exec_path()
-    cmd = [
-        blender,
-        "-b",
-        "-P",
-        os.path.abspath(__file__),
-        "--",
-        "--input",
-        input_path,
-        "--output",
-        output_path,
-        "--format",
-        fmt,
-        "--blender-mode",
-        "1",
-    ]
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    if proc.returncode != 0:
-        raise RuntimeError(f"Blender failed (code {proc.returncode}):\n{proc.stdout}")
-
-
-def convert_usd_like_to_gltf(input_path: str, output_path: str, fmt: str = "GLB") -> str:
+def convert_usd_like_to_gltf(input_path: str, fmt: str = "GLB") -> str:
     """
     Convert .usd/.usda/.usdc/.usdb/.usdz (or a directory containing them) to GLB or glTF embedded (.gltf).
     Returns the output file path.
@@ -131,11 +94,10 @@ def convert_usd_like_to_gltf(input_path: str, output_path: str, fmt: str = "GLB"
     if not os.path.exists(src):
         raise FileNotFoundError(f"Input not found: {src}")
 
-    output_path = '/tmp/app/' + str(uuid.uuid4().hex) + Path(input_path).with_suffix('.glb').name
-    print(output_path)
+    output_path = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4().hex}_" + Path(input_path).with_suffix('.glb').name)
+    logger.info(output_path)
 
     out = _normalize_output_path(os.path.abspath(output_path), fmt)
-    print('out', out)
     tmp_dir = None
     stage_path = src
     try:
@@ -145,10 +107,7 @@ def convert_usd_like_to_gltf(input_path: str, output_path: str, fmt: str = "GLB"
             tmp_dir = tempfile.mkdtemp(prefix="usdz_")
             stage_path = _find_stage_in_usdz(src, tmp_dir)
 
-        if _is_running_in_blender():
-            _run_under_blender(stage_path, out, fmt)
-        else:
-            _spawn_blender_this_script(stage_path, out, fmt)
+        _run_under_blender(stage_path, out, fmt)
         return out
     finally:
         if tmp_dir and os.path.isdir(tmp_dir):
@@ -174,17 +133,8 @@ def main():
     args = _parse_args(sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else sys.argv[1:])
     main_item = dl.items.get(item_id=args.item_id)
     input_path = main_item.download(save_locally=True)
-    output_path = '/tmp/app/' + Path(input_path).with_suffix('.glb').name
 
-    print('output_path', output_path)
-
-    if not _is_running_in_blender() and args.blender_mode != "1":
-        out = _normalize_output_path(os.path.abspath(output_path), args.format)
-        _spawn_blender_this_script(os.path.abspath(input_path), out, args.format)
-        print(out)
-        return
-
-    out = convert_usd_like_to_gltf(input_path, output_path, args.format)
+    out = convert_usd_like_to_gltf(input_path, args.format)
     modality_item = main_item.project.datasets._get_binaries_dataset().items.upload(local_path=out, remote_path='/dm_preview')
     # Create a modality link for the main item
     main_item.modalities.create(
@@ -198,5 +148,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 

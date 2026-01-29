@@ -144,3 +144,5 @@ build.sh
 patch.sh
 publish.py
 *.ipynb
+
+.venv/
