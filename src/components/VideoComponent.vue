@@ -245,7 +245,7 @@ export default {
     justify-content: space-between;
     height: 100vh;
     max-height: 100vh;
-    background-color: var(--dl-color-studio-panel);
+    background-color: var(--dell-gray-100);
     pointer-events: all;
     overflow: hidden;
 }
@@ -265,7 +265,7 @@ button {
 }
 
 #player button::before {
-    color: var(--dl-color-icon-default);
+    color: var(--dell-gray-600);
 }
 
 #controls {
@@ -281,7 +281,7 @@ button {
     justify-content: space-between;
     width: 90%;
     margin-top: 5px;
-    color: var(--dl-color-icon-default);
+    color: var(--dell-gray-600);
     font-weight: 500;
     font-size: 12px;
     font-family: Roboto;
@@ -301,7 +301,7 @@ button {
 }
 
 .btnReplay::before {
-    color: var(--dl-color-panel-header);
+    color: var(--dell-gray-800);
 }
 
 .row {
@@ -338,12 +338,12 @@ button {
 }
 
 .wrap span {
-    color: var(--dl-color-panel-header);
+    color: var(--dell-gray-800);
     cursor: pointer;
 }
 
 .wrap button::before {
-    color: var(--dl-color-panel-header);
+    color: var(--dell-gray-800);
     cursor: pointer;
 }
 

@@ -8,12 +8,12 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: var(--dl-color-studio-panel);
-  color: var(--dl-color-darker);
+  background-color: var(--dell-gray-100);
+  color: var(--dell-gray-800);
 }
 
 .full-screen {
   width: 100vw;
   height: 100vh;
-  background-color: var(--dl-color-studio-panel);
+  background-color: var(--dell-gray-100);
 }

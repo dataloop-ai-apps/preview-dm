@@ -119,7 +119,7 @@ const applyFallbackMaterials = (obj: THREE.Object3D) => {
             // If it's a mesh without material, give it a basic PBR material
             if ((mesh as any).isMesh && !mesh.material) {
                 mesh.material = new THREE.MeshStandardMaterial({
-                    color: getCssVarColor('--dl-color-darker'),
+                    color: getCssVarColor('--dell-gray-800'),
                     metalness: 0.0,
                     roughness: 0.9
                 })
@@ -132,7 +132,7 @@ const applyFallbackMaterials = (obj: THREE.Object3D) => {
                         'color'
                     )
                 ) {
-                    m.color.set(getCssVarColor('--dl-color-darker'))
+                    m.color.set(getCssVarColor('--dell-gray-800'))
                     m.needsUpdate = true
                 }
             }
@@ -200,7 +200,7 @@ const init = () => {
                 const mesh = new THREE.Mesh(
                     geom,
                     new THREE.MeshStandardMaterial({
-                        color: getCssVarColor('--dl-color-darker'),
+                        color: getCssVarColor('--dell-gray-800'),
                         metalness: 0.0,
                         roughness: 0.9
                     })
@@ -224,7 +224,7 @@ const init = () => {
                             vertexColors: !!geom.getAttribute('color'),
                             color: geom.getAttribute('color')
                                 ? undefined
-                                : getCssVarColor('--dl-color-darker'),
+                                : getCssVarColor('--dell-gray-800'),
                             metalness: 0.0,
                             roughness: 0.9
                         })
@@ -238,7 +238,7 @@ const init = () => {
                             vertexColors: !!geom.getAttribute('color'),
                             color: geom.getAttribute('color')
                                 ? undefined
-                                : getCssVarColor('--dl-color-darker')
+                                : getCssVarColor('--dell-gray-800')
                         })
                     )
                     onLoaded(points)
@@ -307,13 +307,13 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--dl-color-bg);
+    background: var(--dell-gray-100);
 }
 
 .meshViewport {
     width: 100vw;
     height: 100vh;
-    background: var(--dl-color-bg);
+    background: var(--dell-gray-100);
 }
 
 .meshViewport canvas {

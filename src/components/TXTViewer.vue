@@ -38,8 +38,8 @@ export default {}
 
 <style scoped>
 .txt-viewer {
-    background: var(--dl-color-bg);
-    color: var(--dl-color-darker);
+    background: var(--dell-gray-100);
+    color: var(--dell-gray-800);
     padding: 1.5rem;
     border-radius: 0.5rem;
     font-family: 'Fira Mono', 'Consolas', monospace;
