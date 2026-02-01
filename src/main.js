@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import '@dataloop-ai/icons/docs/style.css'
+import '@dataloop-ai/icons/style.css'
 import './style.css'
 import App from './App.vue'
 

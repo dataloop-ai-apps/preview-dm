@@ -2,7 +2,7 @@
     <dl-theme-provider :is-dark="isDark">
         <div class="full-screen">
             <div v-if="loading && !errorState" class="loading-spinner">
-                <dl-spinner v-bind="{type:'circle',color:'var(--dl-color-darker)', text:'Loading item preview...'}" />
+                <dl-spinner type="circle" color="var(--dell-gray-800)" text="Loading item preview..." :text-styles="{ color: 'var(--dell-gray-800)' }" />
             </div>
 
             <div v-else>
@@ -291,8 +291,8 @@ const retryPreview = () => {
     display: grid;
     place-items: center;
     height: 100vh;
-    background-color: var(--dl-color-studio-panel);
-    color: var(--dl-color-darker);
+    background-color: var(--dell-gray-100);
+    color: var(--dell-gray-800);
 }
 .content {
     display: grid;
@@ -305,14 +305,14 @@ const retryPreview = () => {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: var(--dl-color-darker);
+    color: var(--dell-gray-800);
 }
 .error-container {
     display: grid;
     place-items: center;
     height: 100vh;
     width: 100%;
-    background-color: var(--dl-color-studio-panel);
+    background-color: var(--dell-gray-100);
 }
 .error-content {
     text-align: center;
@@ -323,7 +323,7 @@ const retryPreview = () => {
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0 0 1rem 0;
-    color: var(--dl-color-darker);
+    color: var(--dell-gray-800);
 }
 .error-title-with-icon {
     display: flex;
@@ -334,19 +334,19 @@ const retryPreview = () => {
 }
 .error-icon {
     font-size: 2rem;
-    color: var(--dl-color-darker);
+    color: var(--dell-gray-800);
 }
 .error-body {
     font-size: 1rem;
     margin: 0 0 1.5rem 0;
-    color: var(--dl-color-darker);
+    color: var(--dell-gray-800);
     opacity: 0.8;
 }
 .error-retry-button {
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
     font-weight: 500;
-    background-color: var(--dl-color-primary, #007bff);
+    background-color: var(--dell-blue-500, #0076CE);
     color: white;
     border: none;
     border-radius: 4px;
@@ -354,7 +354,7 @@ const retryPreview = () => {
     transition: background-color 0.2s;
 }
 .error-retry-button:hover {
-    background-color: var(--dl-color-primary-dark, #0056b3);
+    background-color: var(--dell-blue-600, #0062AB);
 }
 .error-retry-button:active {
     transform: scale(0.98);

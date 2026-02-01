@@ -85,7 +85,7 @@ export default {}
 <style lang="scss">
 .imageContainer {
     overflow: auto;
-    background: var(--dl-color-studio-panel);
+    background: var(--dell-gray-100);
     width: 100vw;
     height: 100vh;
     display: flex;

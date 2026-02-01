@@ -139,7 +139,7 @@ const init = () => {
                 const hasColors = !!geom.getAttribute('color')
                 if (!hasColors) {
                     material.vertexColors = false
-                    material.color.set(getCssVarColor('--dl-color-darker'))
+                    material.color.set(getCssVarColor('--dell-gray-800'))
                 }
             }
 
@@ -189,7 +189,7 @@ const applyTheme = () => {
         const geom = pointCloud.geometry as THREE.BufferGeometry
         const hasColors = !!geom.getAttribute('color')
         if (material && !hasColors) {
-            material.color.set(getCssVarColor('--dl-color-darker'))
+            material.color.set(getCssVarColor('--dell-gray-800'))
             material.needsUpdate = true
         }
     }
@@ -222,13 +222,13 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--dl-color-bg);
+    background: var(--dell-gray-100);
 }
 
 .pcdViewport {
     width: 100vw;
     height: 100vh;
-    background: var(--dl-color-bg);
+    background: var(--dell-gray-100);
 }
 
 .pcdViewport canvas {
