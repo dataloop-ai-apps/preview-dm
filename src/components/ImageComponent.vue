@@ -7,6 +7,7 @@
             @mouseup="handleMouseUp"
             @mousemove="handleMouseMove"
             @wheel="handleWheel"
+            @error="handleImageError"
         />
     </div>
     <div v-if="!url.length" class="content">No media found</div>
@@ -16,7 +17,7 @@
 import { reactive, ref, watch } from 'vue'
 
 /* eslint-disable */
-defineProps([
+const props = defineProps([
     'setIsOpen',
     'isBlackTheme',
     'url',
@@ -28,10 +29,17 @@ defineProps([
     'imgWidth',
     'imgHeight'
 ])
+
+const emit = defineEmits(['image-error'])
+
 const panning = ref(false)
 const imgElem = ref<HTMLImageElement>()
 const coords = reactive({ x: 0, y: 0, scale: 1 })
 let start = { x: 0, y: 0 }
+
+const handleImageError = () => {
+    emit('image-error')
+}
 
 const handleMouseDown = (e: MouseEvent) => {
     e.preventDefault()

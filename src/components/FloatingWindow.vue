@@ -29,6 +29,7 @@
             :height="height"
             :img-width="imgWidth"
             :img-height="imgHeight"
+            @image-error="$emit('image-error')"
         />
         <PDFComponent
             v-else-if="typeOfContent.includes('pdf')"
@@ -90,6 +91,10 @@ const props = defineProps<{
     width?: number
     height?: number
     name?: string
+}>()
+
+const emit = defineEmits<{
+    'image-error': []
 }>()
 
 const imgWidth = ref<number | null>(null)
