@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
 <style lang="scss">
 .dicomContainer {
     overflow: hidden;
-    background: var(--dl-color-bg);
+    background: var(--dell-gray-100);
     width: 100vw;
     height: 100vh;
     display: flex;
@@ -306,7 +306,7 @@ onBeforeUnmount(() => {
 .dicomViewport {
     width: 100vw;
     height: 100vh;
-    background-color: var(--dl-color-bg);
+    background-color: var(--dell-gray-100);
 }
 
 .dicomOverlay {
@@ -319,7 +319,7 @@ onBeforeUnmount(() => {
 }
 
 .dicomViewport canvas {
-    background-color: var(--dl-color-bg) !important;
+    background-color: var(--dell-gray-100) !important;
 }
 
 .content {

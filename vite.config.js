@@ -28,6 +28,7 @@ export default defineConfig({
       'highlight.js',
       'flat',
       'three',
+      'tokenizr',
       'three/examples/jsm/controls/OrbitControls',
       'three/examples/jsm/loaders/GLTFLoader',
       'three/examples/jsm/loaders/OBJLoader',

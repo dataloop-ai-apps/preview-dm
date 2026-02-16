@@ -220,6 +220,7 @@ const setItem = async (itemId) => {
         ]
         const lowerName = (item?.name || '').toLowerCase()
 
+<<<<<<< HEAD
         // Check for unsupported image formats (browsers don't support TIFF)
         const unsupportedImageFormats = ['.tif', '.tiff']
         const isUnsupportedImageFormat = unsupportedImageFormats.some((ext) => 
@@ -231,6 +232,12 @@ const setItem = async (itemId) => {
             (supportedMimes.some((type) => mimetype?.includes(type)) ||
             supportedExts.some((ext) => lowerName.endsWith(ext))) &&
             !isUnsupportedImageFormat
+=======
+        // Check if mimetype or extension is supported
+        const isSupported =
+            supportedMimes.some((type) => mimetype?.includes(type)) ||
+            supportedExts.some((ext) => lowerName.endsWith(ext))
+>>>>>>> b4b3434f5a5d125605af8a55d26ee5f5b59ce12d
         if (!isSupported) {
             // Scenario 2: File type not supported
             errorState.value = 'FILE_TYPE_NOT_SUPPORTED'
@@ -299,8 +306,8 @@ const retryPreview = () => {
     display: grid;
     place-items: center;
     height: 100vh;
-    background-color: var(--dl-color-studio-panel);
-    color: var(--dl-color-darker);
+    background-color: var(--dell-gray-100);
+    color: var(--dell-gray-800);
 }
 .content {
     display: grid;
@@ -313,7 +320,59 @@ const retryPreview = () => {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: var(--dl-color-darker);
+    color: var(--dell-gray-800);
+}
+.error-container {
+    display: grid;
+    place-items: center;
+    height: 100vh;
+    width: 100%;
+    background-color: var(--dell-gray-100);
+}
+.error-content {
+    text-align: center;
+    max-width: 400px;
+    padding: 2rem;
+}
+.error-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: var(--dell-gray-800);
+}
+.error-title-with-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0;
+}
+.error-icon {
+    font-size: 2rem;
+    color: var(--dell-gray-800);
+}
+.error-body {
+    font-size: 1rem;
+    margin: 0 0 1.5rem 0;
+    color: var(--dell-gray-800);
+    opacity: 0.8;
+}
+.error-retry-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    background-color: var(--dell-blue-500, #0076CE);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.error-retry-button:hover {
+    background-color: var(--dell-blue-600, #0062AB);
+}
+.error-retry-button:active {
+    transform: scale(0.98);
 }
 .error-container {
     display: grid;
