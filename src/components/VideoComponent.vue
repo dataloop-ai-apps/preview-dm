@@ -98,6 +98,7 @@ export default {
         'videoWidth',
         'videoHeight'
     ],
+    emits: ['video-error'],
     /* eslint-enable */
     data() {
         return {
@@ -132,6 +133,10 @@ export default {
         this.$refs.videoElem.addEventListener('loadedmetadata', () => {
             this.$refs.videoElem.volume = 0
             this.$forceUpdate()
+        })
+
+        this.$refs.videoElem.addEventListener('error', (e) => {
+            this.$emit('video-error')
         })
     },
     methods: {

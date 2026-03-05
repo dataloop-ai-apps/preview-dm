@@ -56,6 +56,7 @@
                     :type="type"
                     :name="fileName"
                     @image-error="errorState = 'FILE_TYPE_NOT_SUPPORTED'"
+                    @video-error="errorState = 'FILE_TYPE_NOT_SUPPORTED'"
                 />
             </div>
         </div>
@@ -220,24 +221,10 @@ const setItem = async (itemId) => {
         ]
         const lowerName = (item?.name || '').toLowerCase()
 
-<<<<<<< HEAD
-        // Check for unsupported image formats (browsers don't support TIFF)
-        const unsupportedImageFormats = ['.tif', '.tiff']
-        const isUnsupportedImageFormat = unsupportedImageFormats.some((ext) => 
-            lowerName.endsWith(ext) || mimetype?.includes('tiff')
-        )
-
-        // Check if mimetype or extension is supported
-        const isSupported =
-            (supportedMimes.some((type) => mimetype?.includes(type)) ||
-            supportedExts.some((ext) => lowerName.endsWith(ext))) &&
-            !isUnsupportedImageFormat
-=======
         // Check if mimetype or extension is supported
         const isSupported =
             supportedMimes.some((type) => mimetype?.includes(type)) ||
             supportedExts.some((ext) => lowerName.endsWith(ext))
->>>>>>> b4b3434f5a5d125605af8a55d26ee5f5b59ce12d
         if (!isSupported) {
             // Scenario 2: File type not supported
             errorState.value = 'FILE_TYPE_NOT_SUPPORTED'
@@ -249,9 +236,18 @@ const setItem = async (itemId) => {
         }
         
         // Try to stream the item - this can fail for supported types
-        url.value = await dl.items.stream(item.stream, {
-            timeout: 50000
-        })
+        try {
+            url.value = await dl.items.stream(item.stream, {
+                timeout: 50000
+            })
+        } catch (streamError) {
+            errorState.value = 'FILE_TYPE_NOT_SUPPORTED'
+            loading.value = false
+            url.value = ''
+            type.value = ''
+            typeOfContent.value = ''
+            return
+        }
         type.value = mimetype
         // Normalize DICOM/PCD detection
         if (
