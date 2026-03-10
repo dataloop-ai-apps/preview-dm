@@ -1,12 +1,7 @@
 <template>
     <div>
         <VideoComponent
-            v-if="
-                (typeOfContent.includes('video') &&
-                    videoHeight &&
-                    videoWidth) ||
-                (typeOfContent.includes('video') && width && height)
-            "
+            v-if="typeOfContent.includes('video')"
             :set-is-open="setIsOpen"
             :is-black-theme="isBlackTheme"
             :url="url"
@@ -17,6 +12,7 @@
             :height="height"
             :video-width="videoWidth"
             :video-height="videoHeight"
+            @video-error="$emit('video-error')"
         />
         <ImageComponent
             v-else-if="typeOfContent.includes('image')"
@@ -95,6 +91,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     'image-error': []
+    'video-error': []
 }>()
 
 const imgWidth = ref<number | null>(null)
@@ -109,11 +106,23 @@ onMounted(() => {
         !props.height
     ) {
         const video = document.createElement('video')
+        let metadataLoaded = false
+        
         video.addEventListener('loadedmetadata', () => {
+            metadataLoaded = true
             videoWidth.value = video.videoWidth
             videoHeight.value = video.videoHeight + 100
         })
+        video.addEventListener('error', () => {
+            emit('video-error')
+        })
         video.src = props.url
+        
+        setTimeout(() => {
+            if (!metadataLoaded && !videoWidth.value) {
+                emit('video-error')
+            }
+        }, 10000)
     } else if (
         props.typeOfContent.includes('image') &&
         !props.width &&
