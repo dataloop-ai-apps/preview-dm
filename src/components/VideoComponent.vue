@@ -171,7 +171,7 @@ export default {
                 (100 / this.player.duration) * this.player.currentTime
             )
             this.progressBar.value = percentage
-            this.progressBar.innerHTML = `${percentage}% played`
+            this.progressBar.textContent = `${percentage}% played`
         },
         resetPlayer() {
             this.player.currentTime = 0
