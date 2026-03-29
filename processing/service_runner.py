@@ -54,7 +54,7 @@ class ServiceRunner(dl.BaseServiceRunner):
 
         # Run Blender command to convert USD to GLB
         blender_script_path = "./processing/usd_to_gltf.py"
-        cmd = f"blender -b -P {blender_script_path} -- --item_id {item_id} --format GLB"
+        cmd = ["blender", "-b", "-P", blender_script_path, "--", "--item_id", item_id, "--format", "GLB"]
         rc = run_and_stream(cmd, timeout=300)
         if rc != 0:
             raise RuntimeError(f"Blender conversion failed with code {rc}")
@@ -68,7 +68,7 @@ class ServiceRunner(dl.BaseServiceRunner):
 
         # Run Blender command to generate PNG thumbnail
         blender_script_path = "./processing/mesh_to_png.py"
-        cmd = f"blender -b -P {blender_script_path} -- --item_id {preview.ref} --main_item_id {item_id} --resolution 400"
+        cmd = ["blender", "-b", "-P", blender_script_path, "--", "--item_id", preview.ref, "--main_item_id", item_id, "--resolution", "400"]
         rc = run_and_stream(cmd, timeout=300)
         if rc != 0:
             raise RuntimeError(f"Blender conversion failed with code {rc}")
@@ -188,7 +188,7 @@ class ServiceRunner(dl.BaseServiceRunner):
 
         # Run Blender command to render a PNG preview
         script_path = "./processing/mesh_to_png.py"
-        cmd = f"blender -b -P {script_path} -- --item_id {item.id} --resolution 400"
+        cmd = ["blender", "-b", "-P", script_path, "--", "--item_id", item.id, "--resolution", "400"]
         rc = run_and_stream(cmd, timeout=600)
         if rc != 0:
             raise RuntimeError(f"Mesh thumbnail generation failed with code {rc}")
