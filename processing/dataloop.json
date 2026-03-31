@@ -2,12 +2,12 @@
     "name": "preview-processing",
     "displayName": "Preview Processing Service",
     "description": "Unified service for generating previews and thumbnails for various file types (USD, DICOM, Mesh, Office documents).",
-    "version": "0.0.13",
+    "version": "0.0.14",
     "scope": "public",
     "codebase": {
         "type": "git",
         "gitUrl": "https://github.com/dataloop-ai-apps/preview-dm.git",
-        "gitTag": "0.0.13"
+        "gitTag": "0.0.14"
     },
     "attributes": {
         "Category": "Application",

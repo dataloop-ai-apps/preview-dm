@@ -1,13 +1,9 @@
 {
-    "version": "0.0.13",
+    "version": "0.0.14",
     "name": "preview-dm",
     "displayName": "Preview DM",
     "description": "Preview for Dataloop Data Management",
-    "codebase": {
-        "type": "git",
-        "gitUrl": "https://github.com/dataloop-ai-apps/preview-dm.git",
-        "gitTag": "0.0.13"
-    },
+
     "scope": "public",
     "components": {
         "panels": [
@@ -15,15 +11,11 @@
                 "name": "preview",
                 "supportedSlots": [
                     {
-                        "type": "datasetBrowser",
-                        "configuration": {
-                            "layout": {
-                                "rightBarView": "thumbnails"
-                            }
-                        }
+                        "type": "itemPreview"
                     }
                 ],
-                "conditions": {}
+                "conditions": {},
+                "path": null
             }
         ],
         "toolbars": [
@@ -35,7 +27,8 @@
                     "type": "panel",
                     "namespace": "preview"
                 },
-                "location": "datasetBrowserTab"
+                "location": "datasetBrowserTab",
+                "action": null
             }
         ],
         "modules": [],
