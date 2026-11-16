@@ -42,7 +42,7 @@
                     "podType": "regular-xs",
                     "numReplicas": 1,
                     "concurrency": 10,
-                    "runnerImage": "hub.dataloop.ai/dtlpy-runner-images/cpu:python3.14_full",
+                    "runnerImage": "hub.dataloop.ai/customerhub/piper/agent/runner/cpu/base:python3.13_full_bci",
                     "singleAgent": false,
                     "autoscaler": {
                         "type": "rabbitmq",
